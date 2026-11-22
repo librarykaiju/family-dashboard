@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en" class="blur">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Family Board</title>
+<style>
+/* Sized from the screen height so it always fits one screen, no scrolling. 1080p -> 1rem = 16px.
+   Dark glass panels over a wallpaper, same look as the start page. The blur is the one costly bit on
+   the kiosk's Pentium G640; it only redraws when something under a panel changes, and Settings can
+   turn it off (html.blur goes away and the panels get a bit more opaque instead). */
+:root{
+  --bg:#0f1115; --panel:rgba(16,18,23,.58); --line:rgba(255,255,255,.10); --shadow:0 8px 32px rgba(0,0,0,.28);
+  --ink:#eceef1; --muted:#a0a6b1; --faint:#7a808b; --accent:#f0b84a; --today:rgba(56,92,150,.45); --warn:#f0b04a; --bad:#f19999;
+  --dim:.3;
+}
+html:not(.blur){--panel:rgba(16,18,23,.74); --today:rgba(40,66,110,.78)}
+html{font-size:1.48vh}
+@media (max-aspect-ratio:4/3){html{font-size:1.1vw}}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg)}
+html,body{height:100%;overflow:hidden;color:var(--ink);
+  font-family:"Inter","Noto Sans","DejaVu Sans","Segoe UI",sans-serif;cursor:none;-webkit-font-smoothing:antialiased}
+body{display:grid;grid-template-rows:auto minmax(0,1fr) minmax(0,36%);gap:1rem;padding:1.2rem 1.4rem}
+.panel{border-radius:1rem;min-height:0;overflow:hidden}
+.panel,.day,.wxcard{background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow)}
+html.blur .panel,html.blur .day,html.blur .wxcard{-webkit-backdrop-filter:blur(18px) saturate(140%);backdrop-filter:blur(18px) saturate(140%)}
+/* wallpaper: default is the start page's dark gradient */
+#bg{position:fixed;inset:0;z-index:-1;background:radial-gradient(1200px 700px at 15% 0%,#26324d 0%,transparent 60%),
+  radial-gradient(900px 600px at 100% 100%,#2b2240 0%,transparent 55%),var(--bg);background-size:cover;background-position:center}
+#bg::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,var(--dim))}
+.err{color:var(--bad);font-size:.95rem;padding:.6rem 0}
+
+/* top row */
+#top{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:stretch;gap:1.5rem;min-height:0}
+#clockbox{text-shadow:0 2px 12px rgba(0,0,0,.55);display:flex;flex-direction:column;justify-content:center;align-items:flex-start;text-align:left;padding:0 .4rem;justify-self:start;min-width:0}
+#hello{min-width:0;max-width:100%;justify-self:end;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;text-align:left;padding:0 .4rem;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+#greet{font-size:2.6rem;font-weight:600;letter-spacing:-.01em;line-height:1.12;max-width:100%;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#quote{font-size:1.4rem;line-height:1.35;color:#dfe2e7;font-style:italic;margin-top:.5rem;max-width:100%;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#quote:empty{display:none}
+#apodcap{font-size:.95rem;color:#c9cdd4;margin-top:.35rem;max-width:24rem}
+#apodcap div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#apodcap:empty{display:none}
+#time{font-size:6.4rem;font-weight:600;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+#time small{font-size:2.2rem;font-weight:500;color:#d4d8de;margin-left:.5rem;letter-spacing:0}
+#date{font-size:1.9rem;color:#d4d8de;margin-top:.4rem}
+#wx{display:flex;align-items:stretch;gap:.8rem}
+.wxcard{border-radius:1rem;padding:.9rem 1.2rem;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:9.5rem}
+.wxcard .d{font-size:1.15rem;color:var(--muted);font-weight:600}
+.wxcard svg{width:3.6rem;height:3.6rem;margin:.3rem 0}
+.wxcard .hl{font-size:1.6rem;font-weight:600}
+.wxcard .hl span{color:var(--muted);font-weight:400}
+.wxcard .r{font-size:1rem;color:#8cb8ff;margin-top:.15rem;min-height:1.2rem}
+.wxnow{flex-direction:row;gap:1rem;min-width:0;padding:.9rem 1.4rem}
+.wxnow svg{width:5rem;height:5rem;margin:0}
+.wxnow .t{font-size:4rem;font-weight:600;line-height:1;letter-spacing:-.02em}
+.wxnow .tx{font-size:1.15rem;color:var(--muted);margin-top:.35rem;white-space:nowrap}
+#wx.n5{gap:.6rem} #wx.n5 .wxcard:not(.wxnow){min-width:7.4rem;padding:.8rem .7rem}
+#wx.n7{gap:.45rem} #wx.n7 .wxcard:not(.wxnow){min-width:5.9rem;padding:.7rem .45rem}
+#wx.n7 .wxcard svg{width:3rem;height:3rem} #wx.n7 .wxcard .hl{font-size:1.35rem} #wx.n7 .wxcard .r{font-size:.9rem}
+#wx.n7 .wxnow{padding:.8rem 1rem;gap:.8rem} #wx.n7 .wxnow svg{width:4.2rem;height:4.2rem} #wx.n7 .wxnow .t{font-size:3.4rem}
+html.wxbare #wx .wxcard{background:none;border-color:transparent;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;text-shadow:0 2px 10px rgba(0,0,0,.65)}
+html.wxbare #wx svg{filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+html.wxbare #wx .wxcard .d,html.wxbare #wx .wxnow .tx,html.wxbare #wx .hl span{color:#dfe2e7}
+
+/* week */
+#week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:.6rem;min-height:0}
+.day{border-radius:1rem;padding:.7rem .7rem .5rem;
+  display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.day.past>*{opacity:.5}
+.day.today{background:var(--today);border-color:rgba(120,160,230,.45)}
+.day h2{font-size:1.25rem;font-weight:600;display:flex;align-items:baseline;gap:.45rem;margin-bottom:.5rem}
+.day h2 b{font-size:2rem;line-height:1}
+.day.today h2{color:var(--accent)}
+.evs{display:flex;flex-direction:column;gap:.35rem;min-height:0;overflow:hidden;flex:1}
+.ev{border-left:.3rem solid;padding:.2rem 0 .2rem .5rem;font-size:1.12rem;line-height:1.25;flex:none}
+.ev .tm{color:var(--muted);font-size:.95rem;font-variant-numeric:tabular-nums}
+.ev .ti{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.ev.all{border-left:0;border-radius:.4rem;padding:.25rem .5rem;color:#0f1115;font-weight:600}
+.ev.all .ti{-webkit-line-clamp:1}
+.more{font-size:.95rem;color:var(--muted);padding:.15rem 0 0 .5rem;flex:none}
+.none{color:var(--faint);font-size:1rem}
+
+/* bottom row */
+#bottom{display:flex;gap:1rem;min-height:0}
+#lists{flex:1;display:flex;gap:1rem;min-width:0;min-height:0}
+.list{flex:1;min-width:0;padding:.9rem 1.1rem;display:flex;flex-direction:column}
+.list h3{font-size:1.45rem;font-weight:600;display:flex;align-items:baseline;gap:.6rem;margin-bottom:.5rem}
+.list h3 .u{font-size:.9rem;color:var(--faint);font-weight:400;margin-left:auto;white-space:nowrap}
+.list h3 .u.stale{color:var(--warn)}
+.items{list-style:none;min-height:0;overflow:hidden;flex:1;column-width:14rem;column-gap:1.6rem;column-fill:auto;height:100%}
+.items li{font-size:1.2rem;line-height:1.3;padding:.22rem 0 .22rem 1.8rem;position:relative;break-inside:avoid;overflow-wrap:anywhere}
+.items li::before{content:"";position:absolute;left:0;top:.42rem;width:.95rem;height:.95rem;box-sizing:border-box;border:2px solid var(--faint);border-radius:50%}
+.items li.more{color:var(--muted);font-size:1.05rem}
+.items li.more::before{display:none}
+.empty{color:var(--faint);font-size:1.1rem}
+/* "Calendar and list text size" setting: --ts scales these (1 = normal) */
+:root{--ts:1}
+.day h2{font-size:calc(1.25rem*var(--ts))} .day h2 b{font-size:calc(2rem*var(--ts))}
+.ev{font-size:calc(1.12rem*var(--ts))} .ev .tm,.more{font-size:calc(.95rem*var(--ts))} .none{font-size:calc(1rem*var(--ts))}
+.list h3{font-size:calc(1.45rem*var(--ts))} .list h3 .u{font-size:calc(.9rem*var(--ts))}
+.items{column-width:calc(14rem*var(--ts))}
+.items li{font-size:calc(1.2rem*var(--ts));padding-left:calc(1.8rem*var(--ts))}
+.items li::before{top:calc(.42rem*var(--ts));width:calc(.95rem*var(--ts));height:calc(.95rem*var(--ts))}
+.items li.more{font-size:calc(1.05rem*var(--ts))} .empty{font-size:calc(1.1rem*var(--ts))}
+#photo{position:relative;flex:none;aspect-ratio:3/2;height:100%}
+/* portrait photos sit on the same dark glass as the other panels instead of black bars */
+#photo[hidden]{display:none}
+#photo img,#photo video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.2s linear}
+#photo img.on,#photo video.on{opacity:1}
+#photo img.fit,#photo video.fit{object-fit:contain}
+</style>
+</head>
+<body>
+<div id="bg"></div>
+<section id="top">
+  <div id="clockbox"><div id="time">--:--</div><div id="date"></div><div id="apodcap"></div></div>
+  <div id="wx"></div>
+  <div id="hello"><div id="greet"></div><div id="quote"></div></div>
+</section>
+<section id="week"></section>
+<section id="bottom">
+  <div id="lists"></div>
+  <div id="photo" class="panel" hidden><img alt=""><img alt=""><video muted loop playsinline preload="none"></video></div>
+</section>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const getJSON = url => fetch(url, {cache: "no-store"}).then(r => r.json());
+const PAGE_BUILD = "__PAGE_BUILD__";
+let look = {bg_mode: "default", bg_url: "", bg_dim: 30, bg_every: 10, blur: true, photo_panel: true, photo_fill: false, photo_videos: false, wx_days: 3, wx_mono: false, wx_bare: false, text_scale: 100, color_rules: [], greet_name: "", quotes: "", quotes_only: false};
+const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const pad = n => String(n).padStart(2, "0");
+const ymd = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+
+/* ---------- clock: repaint only when the minute changes */
+let lastMin = "", lastDay = "";
+function tick() {
+  const now = new Date();
+  const h = now.getHours(), m = pad(now.getMinutes());
+  const key = h + ":" + m;
+  if (key !== lastMin) {
+    lastMin = key;
+    $("time").innerHTML = "";
+    $("time").append((h % 12 || 12) + ":" + m, el("small", null, h < 12 ? "AM" : "PM"));
+    $("date").textContent = now.toLocaleDateString(undefined, {weekday: "long", month: "long", day: "numeric"});
+    paintHello();
+  }
+  const day = ymd(now);
+  if (lastDay && day !== lastDay) { loadWeek(); loadWeather(); }
+  lastDay = day;
+  // fresh page once a night: picks up changes and keeps Chromium's memory in check
+  if (now.getHours() === 3 && now.getMinutes() === 30 && now.getSeconds() < 2)
+    fetch("/healthz", {cache: "no-store"}).then(r => r.ok && location.reload()).catch(() => {}); // only if the server is up
+}
+
+/* ---------- greeting + a different affirmation each day (same one all day) */
+const AFFIRMATIONS = [
+  "You are loved more than you know.",
+  "Today is a fresh start.",
+  "Small steps still move you forward.",
+  "You are allowed to take up space.",
+  "Kindness you give comes back around.",
+  "You've handled hard days before. You can handle this one.",
+  "Progress, not perfection.",
+  "This home is full of people who believe in you.",
+  "Your best is enough, and it changes day to day.",
+  "Be gentle with yourself today.",
+  "You make this family better just by being in it.",
+  "It's okay to rest. Rest is part of the work.",
+  "Every day is a chance to try again.",
+  "You are braver than you feel.",
+  "Something good is going to happen today.",
+  "Breathe in calm, breathe out worry.",
+  "You don't have to do it all. Just the next thing.",
+  "Laughter counts as a productive activity.",
+  "You are growing, even when it doesn't feel like it.",
+  "Choose the kind word.",
+  "Mistakes are proof that you're trying.",
+  "You are capable of amazing things.",
+  "Gratitude turns what we have into enough.",
+  "Your feelings are valid. All of them.",
+  "Slow down. You're right on time.",
+  "Today, look for the little things that go right.",
+  "You bring light into every room you walk into.",
+  "Asking for help is a strength.",
+  "Be proud of how far you've come.",
+  "There is always something to be thankful for.",
+  "You are exactly who this family needs.",
+  "Hard things become easier with practice.",
+  "Your voice matters.",
+  "A good day starts with a kind thought.",
+  "You can do hard things.",
+  "Love is shown in the small things we do every day.",
+  "Be curious today. Ask one more question.",
+  "Patience is a superpower.",
+  "You are worthy of good things.",
+  "Celebrate the small wins.",
+  "Home is wherever we're together.",
+  "Today you get to choose your attitude.",
+  "Your effort matters more than the outcome.",
+  "Somebody is glad you're here.",
+  "Be the reason someone smiles today.",
+  "Mornings are a reset button.",
+  "It's okay not to have it all figured out.",
+  "You have everything you need to start.",
+  "A messy house means people live here.",
+  "Your kindness makes a difference.",
+  "Take a deep breath. You've got this.",
+  "Courage is doing it scared.",
+  "We're a team.",
+  "Rest when you're tired. Keep going when you're ready.",
+  "You don't have to be perfect to be wonderful.",
+  "Try something new today, even something small.",
+  "You're doing better than you think.",
+  "Listen first. Then speak with kindness.",
+  "Your story is still being written.",
+  "Joy is found in ordinary moments.",
+  "You are strong, and you are not alone.",
+  "Today is a good day to be helpful.",
+  "Your hard work is noticed.",
+  "Forgive quickly. Love generously.",
+  "One good thing today is enough.",
+  "You are a good friend to the people around you.",
+  "Every expert was once a beginner.",
+  "Good things take time.",
+  "Share a hug today.",
+  "You make ordinary days feel special.",
+  "Stay curious, stay kind.",
+  "There is no one else quite like you.",
+  "Let today be simple.",
+  "You are allowed to change your mind.",
+  "Be proud of the way you treat people.",
+  "Your calm is contagious.",
+  "Tomorrow is a new chance, and so is right now.",
+  "Do your best and let the rest go.",
+  "You are deeply cared for.",
+  "Keep going. You're closer than you think.",
+  "Be generous with compliments.",
+  "This moment is enough.",
+  "You are learning every day.",
+  "Today, notice what makes you smile.",
+  "Hope is always worth holding on to.",
+  "You belong here.",
+  "Little by little, a little becomes a lot.",
+  "Your heart is your best guide.",
+  "Make room for fun today.",
+  "You have the power to make someone's day.",
+  "We grow stronger together.",
+  "Trust yourself. You know more than you think.",
+  "Thank someone today for something small.",
+  "You are a gift to this family.",
+  "Finish the day knowing you did your best.",
+  "Peace begins with a single breath.",
+  "What you do today matters.",
+  "You are more than enough.",
+  "Every day holds something new to learn.",
+  "Go easy on yourself. You're doing great."
+];
+let lastQuoteKey = "";
+function paintHello(force) {
+  const now = new Date(), h = now.getHours();
+  const part = h >= 5 && h < 12 ? "Good morning" : h >= 12 && h < 17 ? "Good afternoon" : "Good evening";
+  const name = look.greet_name || "";
+  $("greet").textContent = part + (name ? ", " + name : "");
+  // quote: same all day, changes at midnight; custom lines from Settings are mixed in (or used alone)
+  const own = (look.quotes || "").split("\n").map(x => x.trim()).filter(Boolean);
+  const pool = own.length && look.quotes_only ? own : AFFIRMATIONS.concat(own);
+  const day = Math.floor((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(2026, 0, 1)) / 864e5);
+  const key = day + "|" + pool.length + "|" + own.join("|");
+  if (!force && key === lastQuoteKey) return;
+  lastQuoteKey = key;
+  const n = pool.length;
+  // step through the list by a large prime so neighbors in the list don't land on back-to-back days
+  $("quote").textContent = n ? pool[((day * 37) % n + n) % n] : "";
+}
+
+setInterval(tick, 1000); tick();
+
+/* ---------- weather icons (inline SVG, no emoji font needed) */
+// colors: normal, and the monochrome option (white sun, gray clouds, one hue throughout)
+const WXC = {sun: "#f6c443", moon: "#d7dbe4", cloud: "#c9ced8", dark: "#9aa1ad", rain: "#6ea8ff", bolt: "#f6c443", snow: "#fff", fog: "#9aa1ad"};
+const WXM = {sun: "#ffffff", moon: "#ffffff", cloud: "#b4bac4", dark: "#8d939d", rain: "#ffffff", bolt: "#ffffff", snow: "#ffffff", fog: "#b4bac4"};
+let P = WXC;
+const SUNs = () => `<circle cx="24" cy="24" r="8" fill="${P.sun}"/><g stroke="${P.sun}" stroke-width="3" stroke-linecap="round"><path d="M24 6v5M24 37v5M6 24h5M37 24h5M11.3 11.3l3.5 3.5M33.2 33.2l3.5 3.5M11.3 36.7l3.5-3.5M33.2 14.8l3.5-3.5"/></g>`;
+const MOONs = () => `<path d="M30 8a15 15 0 1 0 10 25A13 13 0 0 1 30 8z" fill="${P.moon}"/>`;
+const CLOUD = (y = 0, c = P.cloud) => `<path transform="translate(0 ${y})" d="M14 38h22a8 8 0 0 0 0-16 11 11 0 0 0-21-2A8.5 8.5 0 0 0 14 38z" fill="${c}"${P === WXM ? ' stroke="rgba(20,24,30,.55)" stroke-width="1.5"' : ""}/>`;
+function wxIcon(code, day = 1) {
+  P = look.wx_mono ? WXM : WXC;
+  const SUN = SUNs(), MOON = MOONs();
+  let s;
+  if (code === 0 || code === 1) s = day ? SUN : MOON;
+  else if (code === 2) s = (day ? '<g transform="translate(-6 -7) scale(.85)">' + SUN + '</g>' : '<g transform="translate(-6 -6) scale(.8)">' + MOON + '</g>') + CLOUD(2);
+  else if (code === 3) s = CLOUD(-2);
+  else if (code === 45 || code === 48) s = CLOUD(-6) + `<g stroke="${P.fog}" stroke-width="3" stroke-linecap="round"><path d="M10 38h28M14 44h20"/></g>`;
+  else if (code >= 95) s = CLOUD(-8, P.dark) + `<path d="M25 30l-6 9h5l-3 8 9-11h-5l3-6z" fill="${P.bolt}"/>`;
+  else if ((code >= 71 && code <= 77) || code === 85 || code === 86) s = CLOUD(-8) + `<g fill="${P.snow}"><circle cx="16" cy="38" r="2.3"/><circle cx="24" cy="43" r="2.3"/><circle cx="32" cy="38" r="2.3"/></g>`;
+  else if (code >= 51) s = CLOUD(-8, P === WXM ? P.cloud : "#aeb4bf") + `<g stroke="${P.rain}" stroke-width="3" stroke-linecap="round"><path d="M16 35l-2 6M24 35l-2 6M32 35l-2 6"/></g>`;
+  else s = CLOUD(-2);
+  return '<svg viewBox="0 0 48 48" aria-hidden="true">' + s + '</svg>';
+}
+
+/* ---------- weather: now + 3, 5 or 7 days */
+const r = v => v == null ? "--" : Math.round(v);
+let wxData = null, wxSig = "";
+function loadWeather() {
+  getJSON("/api/weather").then(d => { wxData = d; wxSig = ""; renderWeather(); }).catch(() => {});
+}
+function renderWeather() {
+  const d = wxData; if (!d) return;
+  const n = [3, 5, 7].includes(+look.wx_days) ? +look.wx_days : 3;
+  const sig = n + "|" + !!look.wx_mono; if (sig === wxSig) return; wxSig = sig;
+  {
+    const box = $("wx"); box.innerHTML = ""; box.className = "n" + n;
+    if (d.error && !d.days) { box.append(el("div", "err", "Weather: " + d.error)); return; }
+    const now = el("div", "wxcard wxnow");
+    now.innerHTML = wxIcon(d.code, d.is_day);
+    const t = el("div"); t.append(el("div", "t", r(d.temp) + "°"), el("div", "tx", d.text + " · feels " + r(d.feels) + "°"));
+    now.append(t); box.append(now);
+    const today = ymd(new Date());
+    (d.days || []).slice(0, n).forEach((x, i) => {
+      const c = el("div", "wxcard");
+      const dd = new Date(x.date + "T12:00:00");
+      c.append(el("div", "d", x.date === today ? "Today" : DAYS[dd.getDay()]));
+      c.insertAdjacentHTML("beforeend", wxIcon(x.code, 1));
+      const hl = el("div", "hl", r(x.high) + "° "); hl.append(el("span", null, r(x.low) + "°"));
+      c.append(hl, el("div", "r", x.rain ? x.rain + "% rain" : ""));
+      c.title = x.text; box.append(c);
+    });
+  }
+}
+loadWeather(); setInterval(loadWeather, 15 * 60 * 1000);
+
+/* ---------- trim a box's children until it fits, then add "+N more" */
+function fit(box, makeMore) {
+  const over = () => {
+    const last = box.lastElementChild; if (!last) return false;
+    const b = box.getBoundingClientRect(), r = last.getBoundingClientRect();
+    return r.bottom > b.bottom + 1 || r.right > b.right + 1;
+  };
+  let hidden = 0, more = null;
+  while (over()) {
+    const k = Array.from(box.children).filter(x => x !== more);
+    if (!k.length) break;
+    k[k.length - 1].remove(); hidden++;
+    if (!more) { more = makeMore(); box.append(more); }
+    more.textContent = "+" + hidden + " more";
+  }
+}
+
+/* ---------- week: Monday to Sunday */
+const fmtTime = d => { const h = d.getHours(), m = d.getMinutes(); return (h % 12 || 12) + (m ? ":" + pad(m) : "") + (h < 12 ? "a" : "p"); };
+let weekData = null;
+/* name rules from Settings: the first rule with a word found in the event's title sets its color */
+let ruleRx = [], rulesSig = "";
+function buildRules() {
+  const esc = w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  ruleRx = (look.color_rules || []).map(r => {
+    const words = String(r.words || "").split(",").map(w => w.trim()).filter(Boolean).map(esc);
+    return words.length ? {rx: new RegExp("(^|[^\\p{L}\\p{N}])(" + words.join("|") + ")(?=$|[^\\p{L}\\p{N}])", "iu"), color: r.color} : null;
+  }).filter(Boolean);
+}
+function ruleColor(title) { for (const r of ruleRx) if (r.rx.test(title || "")) return r.color; return ""; }
+function renderWeek() {
+  const box = $("week"); box.innerHTML = "";
+  if (!weekData) return;
+  if (weekData.error && !weekData.events) { box.append(el("div", "err", "Calendar: " + weekData.error)); return; }
+  const now = new Date(), todayKey = ymd(now);
+  const mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7));
+  const evs = weekData.events.map(e => Object.assign({}, e, {s: new Date(e.start), e: new Date(e.end)}));
+  for (let i = 0; i < 7; i++) {
+    const d0 = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i);
+    const d1 = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i + 1);
+    const key = ymd(d0);
+    const col = el("div", "day" + (key === todayKey ? " today" : key < todayKey ? " past" : ""));
+    const h = el("h2"); h.append(el("span", null, DAYS[d0.getDay()]), el("b", null, d0.getDate()));
+    const list = el("div", "evs");
+    const todays = evs.filter(e => e.s < d1 && (e.e > d0 || (+e.e === +e.s && e.s >= d0)));
+    todays.forEach(e => {
+      e = Object.assign({}, e, {color: ruleColor(e.title) || e.color});
+      const row = el("div", "ev" + (e.allDay ? " all" : ""));
+      if (e.allDay) row.style.background = e.color;
+      else {
+        row.style.borderColor = e.color;
+        row.append(el("div", "tm", e.s >= d0 ? fmtTime(e.s) + (+e.e > +e.s && e.e <= d1 ? " – " + fmtTime(e.e) : "") : "cont."));
+      }
+      row.append(el("div", "ti", e.title));
+      row.title = e.calendar;
+      list.append(row);
+    });
+    if (!todays.length) list.append(el("div", "none", key < todayKey ? "" : "Nothing planned"));
+    col.append(h, list); box.append(col);
+    fit(list, () => el("div", "more"));
+  }
+}
+function loadWeek() { getJSON("/api/week").then(d => { weekData = d; renderWeek(); }).catch(() => {}); }
+loadWeek(); setInterval(loadWeek, 5 * 60 * 1000);
+
+/* ---------- lists from the iPhone Shortcut */
+const ago = s => s < 90 ? "just now" : s < 3600 ? Math.round(s / 60) + "m ago" : s < 86400 ? Math.round(s / 3600) + "h ago" : Math.round(s / 86400) + "d ago";
+let listSig = "";
+function loadLists() {
+  getJSON("/api/lists").then(d => {
+    const sig = JSON.stringify(d.lists) + "|" + Math.floor(d.now / 60);
+    if (sig === listSig) return; listSig = sig;
+    const box = $("lists"); box.innerHTML = "";
+    if (!d.lists.length) {
+      const p = el("div", "panel list"); p.append(el("h3", null, "Lists"), el("div", "empty", "Waiting for the iPhone Shortcut to send a Reminders list."));
+      box.append(p); return;
+    }
+    d.lists.forEach(l => {
+      const p = el("div", "panel list");
+      const h = el("h3", null, l.name);
+      const age = d.now - (l.updated || 0);
+      h.append(el("span", "u" + (age > d.stale_after ? " stale" : ""), age > d.stale_after ? "not updated since " + new Date(l.updated * 1000).toLocaleDateString(undefined, {weekday: "short", month: "short", day: "numeric"}) : ago(age)));
+      p.append(h);
+      if (!l.items.length) { p.append(el("div", "empty", "All done")); box.append(p); return; }
+      const ul = el("ul", "items");
+      l.items.forEach(t => ul.append(el("li", null, t)));
+      p.append(ul); box.append(p);
+    });
+    // fit only after every card is placed, so widths are final
+    box.querySelectorAll(".items").forEach(ul => fit(ul, () => el("li", "more")));
+  }).catch(() => {});
+}
+loadLists(); setInterval(loadLists, 60 * 1000);
+
+/* ---------- look: wallpaper, darken, glass blur, photo panel. Changed from /settings on a phone or PC;
+   the kiosk checks once a minute and applies changes without a reload. */
+let lookSig = "", ids = [], vids = new Set(), pi = 0, front = 0, wallTimer = null, lastWall = "";
+function setWall(url) {
+  if (url === lastWall) return;
+  lastWall = url;
+  if (!url) { $("bg").style.backgroundImage = ""; return; }
+  const pre = new Image();               // swap only once loaded, so it never flashes empty
+  pre.onload = () => { if (lastWall === url) $("bg").style.backgroundImage = 'url("' + url.replace(/"/g, "%22") + '")'; };
+  pre.onerror = () => { if (lastWall === url) lastWall = ""; };
+  pre.src = url;
+}
+function albumWall() { const p = ids.filter(i => !vids.has(i)); if (p.length) setWall("/photo/" + p[Math.floor(Math.random() * p.length)]); }
+function applyLook() {
+  document.documentElement.classList.toggle("blur", look.blur !== false);
+  document.documentElement.classList.toggle("wxbare", !!look.wx_bare);
+  const rs = JSON.stringify(look.color_rules || []);
+  if (rs !== rulesSig) { rulesSig = rs; buildRules(); renderWeek(); }
+  const ts = String(Math.min(160, Math.max(70, +look.text_scale || 100)) / 100);
+  if (document.documentElement.style.getPropertyValue("--ts") !== ts) {
+    document.documentElement.style.setProperty("--ts", ts);
+    renderWeek(); listSig = ""; loadLists();   // re-fit at the new size
+  }
+  renderWeather();
+  $("photo").querySelectorAll("img,video").forEach(placeImg);
+  const dy = look.daily || {}, dailyOk = dy.source === look.bg_mode && dy.ready && !!dy.date;
+  const hasWall = look.bg_mode === "image" ? !!look.bg_url : look.bg_mode === "album" || dailyOk;
+  $("apodcap").replaceChildren();   // label and title, then the photographer credit on its own line
+  if (dailyOk) $("apodcap").append(el("div", null, dy.label + (dy.title ? " \u00b7 " + dy.title : "")),
+                                   ...(dy.copyright && dy.source !== "apod" ? [el("div", null, (dy.source === "unsplash" ? "Photo: " : "\u00a9 ") + dy.copyright)] : []));
+  document.documentElement.style.setProperty("--dim", (hasWall ? look.bg_dim : 0) / 100);
+  clearInterval(wallTimer); wallTimer = null;
+  if (look.bg_mode === "image") setWall(look.bg_url || "");
+  else if (look.bg_mode === "album") { albumWall(); wallTimer = setInterval(albumWall, Math.max(1, look.bg_every || 10) * 60 * 1000); }
+  else if (dailyOk) setWall("/daily/" + dy.source + "?d=" + encodeURIComponent(dy.date));
+  else setWall("");   // source unavailable and nothing cached: plain gradient
+  showPanel();
+}
+function loadLook() {
+  getJSON("/api/settings").then(d => {
+    // a new version was deployed: the server's build no longer matches the one this page was served with
+    if (d.build && PAGE_BUILD !== "__PAGE" + "_BUILD__" && d.build !== PAGE_BUILD) { location.reload(); return; }
+    const sig = JSON.stringify(d); if (sig === lookSig) return;
+    const albumChanged = look.immich_album !== d.immich_album || !!look.photo_videos !== !!d.photo_videos; lookSig = sig; look = Object.assign(look, d); applyLook(); paintHello(true); if (albumChanged) loadPhotos();
+  }).catch(() => {});
+}
+
+/* ---------- photo panel from an Immich album (hidden if not set up or turned off) */
+function showPanel() {
+  const show = ids.length > 0 && look.photo_panel !== false;
+  if ($("photo").hidden === show) { $("photo").hidden = !show; listSig = ""; loadLists(); if (show) nextPhoto(); }
+}
+function nextPhoto() {
+  if (!ids.length || $("photo").hidden) return;
+  const imgs = $("photo").querySelectorAll("img");
+  const back = imgs[1 - front], id = ids[pi++ % ids.length];
+  if (vids.has(id)) return playClip(id, imgs);
+  const pre = new Image();
+  const loaded = new Promise((ok, no) => { pre.onload = ok; pre.onerror = no; });
+  pre.src = "/photo/" + id;
+  const focus = getJSON("/api/focus/" + id).catch(() => ({}));
+  Promise.all([loaded, focus]).then(([, f]) => {
+    back._r = pre.naturalWidth / pre.naturalHeight; back._f = f && f.faces ? f : null;
+    back.src = pre.src;
+    placeImg(back);
+    back.classList.add("on"); imgs[front].classList.remove("on"); stopClip(); front = 1 - front;
+  }).catch(() => {});
+}
+/* a short video from the album: muted, looping until the next change. If it won't play
+   (a format this Chromium can't decode, or Immich is slow), skip to the next photo. */
+function playClip(id, imgs) {
+  const v = $("photo").querySelector("video");
+  let done = false;
+  const skip = () => { if (done) return; done = true; stopClip(); nextPhoto(); };
+  const t = setTimeout(skip, 15000);
+  v.onerror = skip;
+  v.onplaying = () => {
+    if (done) return; done = true; clearTimeout(t);
+    v._r = v.videoWidth / v.videoHeight || 1.5; v._f = null; placeImg(v);
+    v.classList.add("on"); imgs[front].classList.remove("on");
+  };
+  v.src = "/video/" + id;
+  v.play().catch(skip);
+}
+function stopClip() {
+  const v = $("photo").querySelector("video");
+  if (!v.getAttribute("src")) return;
+  v.classList.remove("on"); v.onerror = v.onplaying = null;
+  setTimeout(() => { v.pause(); v.removeAttribute("src"); v.load(); }, 1300);   // after the fade; frees the decoder
+}
+/* Crop to fill the frame, keeping the people (Immich's face boxes) in view. A photo far off the frame's
+   shape is shown whole unless "Fill the photo frame" is on. If the main faces don't all fit, the crop
+   centers on the biggest one. */
+function placeImg(img) {
+  if (!img._r) return;
+  const box = $("photo"), boxR = box.clientWidth / box.clientHeight || 1.5, r = img._r, f = img._f;
+  const tall = r < boxR, v = tall ? r / boxR : boxR / r;         // share of the photo that stays visible
+  let lo = f ? (tall ? f.y1 : f.x1) : 0.5, hi = f ? (tall ? f.y2 : f.x2) : 0.5;
+  // everyone doesn't fit: keep the biggest face (the subject) in view instead
+  if (f && hi - lo > v && f.one) { lo = tall ? f.one[1] : f.one[0]; hi = tall ? f.one[3] : f.one[2]; }
+  if (hi - lo > v) { const c = (lo + hi) / 2; lo = c - v / 2; hi = c + v / 2; }
+  const far = r < boxR * 0.75 || r > boxR * 1.6;
+  const whole = far && !look.photo_fill;
+  img.classList.toggle("fit", whole);
+  let pos = 50;
+  if (!whole && f && v < 1) pos = Math.min(Math.max((lo + hi) / 2 - v / 2, 0), 1 - v) / (1 - v) * 100;
+  img.style.objectPosition = tall ? `50% ${pos.toFixed(1)}%` : `${pos.toFixed(1)}% 50%`;
+}
+function loadPhotos() {
+  getJSON("/api/photos").then(d => {
+    const had = ids.length;
+    ids = d.ids || []; vids = new Set(d.videos || []);
+    showPanel();
+    if (ids.length && !had && look.bg_mode === "album") albumWall();
+  }).catch(() => {});
+}
+loadLook(); loadPhotos();
+// if the top row grows (a longer affirmation, a name added), the panels below shrink: re-fit them
+let fitT, lastH = {};
+new ResizeObserver(es => {
+  let changed = false;
+  es.forEach(e => { const h = Math.round(e.contentRect.height); if (lastH[e.target.id] !== undefined && lastH[e.target.id] !== h) changed = true; lastH[e.target.id] = h; });
+  if (!changed) return;
+  clearTimeout(fitT); fitT = setTimeout(() => { renderWeek(); listSig = ""; loadLists(); }, 300);
+}).observe($("week"));
+setInterval(loadLook, 60 * 1000); setInterval(loadPhotos, 60 * 60 * 1000); setInterval(nextPhoto, 60 * 1000);
+</script>
+</body>
+</html>

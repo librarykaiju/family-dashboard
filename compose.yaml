@@ -1,0 +1,34 @@
+# Family dashboard for the kitchen kiosk. Project name: family.
+#   /mnt/user/appdata/family   family.py, index.html, .env
+#                              vendor/ is created on first start (calendar libraries, ~3 MB)
+#                              data/lists.json holds the lists the iPhone Shortcut sends
+# Port 8096. Keep it on your LAN/VPN: there is no login. About 30 MB of RAM.
+
+name: family
+
+services:
+  family:
+    image: docker.io/library/python:3.13-alpine
+    container_name: family
+    working_dir: /app
+    command: >
+      sh -c "[ -d vendor/recurring_ical_events ] || pip install -q --no-cache-dir --target vendor icalendar recurring-ical-events;
+             exec python -u family.py"
+    env_file: .env
+    environment:
+      - HOME=/tmp
+      - PORT=8096
+    volumes:
+      - /mnt/user/appdata/family:/app
+    ports:
+      - 8096:8096
+    user: "99:100"
+    mem_limit: 128m
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: "5m"
+        max-file: "2"
+    labels:
+      net.unraid.docker.webui: http://[IP]:[PORT:8096]
+      net.unraid.docker.icon: https://raw.githubusercontent.com/homarr-labs/dashboard-icons/main/png/homepage.png

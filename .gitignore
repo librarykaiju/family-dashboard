@@ -1,0 +1,10 @@
+# secrets: real values live only on the server
+.env
+# runtime state: private.json (calendar address, Immich/Unsplash keys), lists, settings, cached wallpapers
+data/
+# pip-installed on first container start
+vendor/
+__pycache__/
+*.pyc
+*.bak
+*.tmp
