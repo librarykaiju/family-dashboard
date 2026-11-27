@@ -95,6 +95,28 @@ html.wxbare #wx .wxcard .d,html.wxbare #wx .wxnow .tx,html.wxbare #wx .hl span{c
 .items li.more{color:var(--muted);font-size:1.05rem}
 .items li.more::before{display:none}
 .empty{color:var(--faint);font-size:1.1rem}
+.notes .items{column-width:18rem}
+.notes .items li{padding:.3rem 0 .45rem .9rem;border-left:3px solid var(--nc,var(--faint));margin-bottom:.4rem;white-space:pre-line}
+.notes .items li::before{display:none}
+.notes .items li.more{border-left:0;padding-left:0}
+.notes .who{display:block;white-space:normal;font-size:.95rem;color:var(--nc,var(--muted));margin-top:.15rem}
+/* Party panel: everyone's level, XP bar and quests left today (from the family app's Quests) */
+.party{flex:1.3}
+.party .mem{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:.4rem 1rem;padding:.45rem 0;border-bottom:1px solid var(--line)}
+.party .mem:last-child{border-bottom:0}
+.party .av{width:2.9rem;height:2.9rem;border-radius:50%;background:var(--mc);color:#0f1115;font-weight:800;font-size:1.4rem;display:grid;place-items:center;grid-row:span 2}
+.party .nm{font-size:1.3rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.party .nm span{font-size:1rem;color:var(--muted);font-weight:400;margin-left:.5rem}
+.party .lv{font-size:1.05rem;color:var(--muted);text-align:right;white-space:nowrap}
+.party .lv.done{color:#7fd6a4}
+.party .xb{grid-column:2 / span 2;height:.55rem;border-radius:.3rem;background:rgba(255,255,255,.12);overflow:hidden}
+.party .xb i{display:block;height:100%;background:var(--mc);border-radius:.3rem}
+#levelup{position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);z-index:20;text-align:center;padding:2.2rem 3.5rem;border-radius:1.4rem;
+  background:rgba(16,18,23,.92);border:2px solid var(--lc,var(--accent));box-shadow:0 0 4rem rgba(0,0,0,.6);opacity:0;transition:opacity .4s;pointer-events:none}
+#levelup.on{opacity:1}
+#levelup b{display:block;font-size:1.6rem;letter-spacing:.3em;color:var(--lc,var(--accent))}
+#levelup div{font-size:3.2rem;font-weight:700;margin-top:.4rem}
+#levelup small{display:block;font-size:1.4rem;color:var(--muted);margin-top:.3rem}
 /* "Calendar and list text size" setting: --ts scales these (1 = normal) */
 :root{--ts:1}
 .day h2{font-size:calc(1.25rem*var(--ts))} .day h2 b{font-size:calc(2rem*var(--ts))}
@@ -103,6 +125,7 @@ html.wxbare #wx .wxcard .d,html.wxbare #wx .wxnow .tx,html.wxbare #wx .hl span{c
 .items{column-width:calc(14rem*var(--ts))}
 .items li{font-size:calc(1.2rem*var(--ts));padding-left:calc(1.8rem*var(--ts))}
 .items li::before{top:calc(.42rem*var(--ts));width:calc(.95rem*var(--ts));height:calc(.95rem*var(--ts))}
+.notes .items{column-width:calc(18rem*var(--ts))} .notes .items li{padding-left:calc(.9rem*var(--ts))} .notes .who{font-size:calc(.95rem*var(--ts))}
 .items li.more{font-size:calc(1.05rem*var(--ts))} .empty{font-size:calc(1.1rem*var(--ts))}
 #photo{position:relative;flex:none;aspect-ratio:3/2;height:100%}
 /* portrait photos sit on the same dark glass as the other panels instead of black bars */
@@ -110,6 +133,87 @@ html.wxbare #wx .wxcard .d,html.wxbare #wx .wxnow .tx,html.wxbare #wx .hl span{c
 #photo img,#photo video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.2s linear}
 #photo img.on,#photo video.on{opacity:1}
 #photo img.fit,#photo video.fit{object-fit:contain}
+/* the Remote: a detail page a phone puts over the dashboard */
+#remote{position:fixed;inset:1.2rem 1.4rem;z-index:15;border-radius:1.2rem;padding:1.5rem 2rem;background:#0e1014;border:1px solid var(--line);
+  box-shadow:0 0 5rem rgba(0,0,0,.6);display:flex;flex-direction:column;gap:1.1rem;overflow:hidden}
+#remote[hidden]{display:none}
+#remote .rh{display:flex;align-items:baseline;gap:1.5rem}
+#remote .rh h1{font-size:2.6rem;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#remote .rh span{font-size:1.1rem;color:var(--faint);white-space:nowrap}
+#rBody{flex:1;min-height:0;display:flex;gap:1.5rem}
+.rcol{flex:1;min-width:0;display:flex;flex-direction:column;gap:1rem;min-height:0}
+.rbox{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:1rem;padding:1.1rem 1.3rem;min-height:0;overflow:hidden}
+.rbox h3{font-size:1.1rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:.7rem}
+/* sheet */
+.shead{display:flex;align-items:center;gap:1.4rem}
+.shead .av{width:6rem;height:6rem;border-radius:50%;background:var(--mc);color:#0f1115;font-weight:800;font-size:3rem;display:grid;place-items:center;flex:none}
+.shead .nm{font-size:2.4rem;font-weight:700}
+.av.ph{background-size:cover;background-position:center;color:transparent}
+.rh7{display:flex;align-items:center;gap:1rem;padding:.5rem 0;border-bottom:1px solid var(--line);font-size:1.3rem}
+.rh7:last-child{border-bottom:0}
+.rh7 .tt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rh7 .d7{display:flex;gap:.35rem}
+.rh7 .d7 i{width:.9rem;height:.9rem;border-radius:50%;background:rgba(255,255,255,.14)}
+.rh7 .d7 i.on{background:#7fd6a4}
+.rh7 small{color:var(--muted);font-size:1.05rem;white-space:nowrap;min-width:6.5rem;text-align:right}
+.shead .cl{font-size:1.3rem;color:var(--muted)}
+.shead .gd{margin-left:auto;font-size:1.8rem;font-weight:700;color:#f3cf6b;white-space:nowrap}
+.rxb{height:.9rem;border-radius:.5rem;background:rgba(255,255,255,.12);overflow:hidden;margin-top:.6rem}
+.rxb i{display:block;height:100%;background:var(--mc)}
+.sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.sbx{border:1px solid var(--line);border-radius:1rem;text-align:center;padding:.9rem .4rem;background:rgba(0,0,0,.25)}
+.sbx b{display:block;font-size:1.2rem;letter-spacing:.1em;color:var(--accent)}
+.sbx div{font-size:3.2rem;font-weight:800;line-height:1.1}
+.sbx span{display:inline-block;font-size:1.1rem;font-weight:700;border:1px solid var(--line);border-radius:1rem;padding:0 .7rem}
+.sbx small{display:block;font-size:.95rem;color:var(--faint);margin-top:.3rem}
+.rq{display:flex;align-items:center;gap:1rem;padding:.55rem 0;border-bottom:1px solid var(--line);font-size:1.35rem}
+.rq:last-child{border-bottom:0}
+.rq .ck{width:1.6rem;height:1.6rem;border-radius:50%;border:2px solid var(--faint);flex:none}
+.rq.approved .ck{background:#7fd6a4;border-color:#7fd6a4}
+.rq.pending .ck{border-color:var(--accent);border-style:dashed}
+.rq.approved .tt{color:var(--faint)}
+.rq .tt{flex:1;min-width:0}
+.rq .tt small{display:block;font-size:1rem;color:var(--faint)}
+.rq .xp{color:var(--muted);font-size:1.1rem;white-space:nowrap}
+.rg{padding:.55rem 0;border-bottom:1px solid var(--line);font-size:1.35rem}
+.rg:last-child{border-bottom:0}
+.rg .gt{display:flex;gap:1rem;align-items:baseline}
+.rg .gt span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rg .gt small{font-size:1.05rem;color:var(--muted);white-space:nowrap}
+.rg .rxb{margin-top:.4rem;height:.6rem}
+.rg.claimed .gt span::after{content:" ★";color:#f5c542}
+.rg.trophy .gt span::before{content:"🏆 "}
+/* weather */
+.wnow{display:flex;align-items:center;gap:2rem}
+.wnow svg{width:9rem;height:9rem}
+.wnow .t{font-size:6rem;font-weight:700;line-height:1}
+.wnow .tx{font-size:1.6rem;color:var(--muted)}
+.hours{display:grid;grid-template-columns:repeat(12,1fr);gap:.5rem;text-align:center}
+.hours div{font-size:1.1rem;color:var(--muted)}
+.hours svg{width:3.2rem;height:3.2rem;display:block;margin:.2rem auto}
+.hours b{display:block;font-size:1.5rem;color:var(--ink)}
+.wdays .wd{display:grid;grid-template-columns:7rem 3.5rem 1fr 8rem 8rem;align-items:center;gap:1rem;padding:.4rem 0;border-bottom:1px solid var(--line);font-size:1.4rem}
+.wdays .wd:last-child{border-bottom:0}
+.wdays svg{width:3rem;height:3rem}
+.wdays .lo{color:var(--muted)}
+/* month */
+.mgrid{flex:1;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:auto;grid-auto-rows:1fr;gap:.4rem;min-height:0}
+.mgrid .dh{font-size:1.1rem;color:var(--muted);text-align:center;padding-bottom:.2rem}
+.mc{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:.6rem;padding:.3rem .45rem;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.mc.out{opacity:.35}
+.mc.today{background:var(--today);border-color:rgba(120,160,230,.6)}
+.mc b{font-size:1.15rem}
+.mc .es{flex:1;min-height:0;overflow:hidden}
+.mc .e{font-size:.95rem;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:3px solid var(--ec,var(--faint));padding-left:.3rem;margin-top:.15rem}
+.mc .e.more{border:0;color:var(--muted)}
+/* one day */
+.dl .de{display:flex;gap:1.5rem;padding:.8rem 0;border-bottom:1px solid var(--line);font-size:1.7rem}
+.dl .de:last-child{border-bottom:0}
+.dl .de .tm{width:11rem;color:var(--muted);flex:none}
+.dl .de .ti{border-left:4px solid var(--ec,var(--faint));padding-left:1rem}
+/* TV remote highlight */
+.tvf{outline:.3rem solid var(--accent);outline-offset:.25rem;border-radius:1rem}
+.party .mem.tvf{outline-offset:.1rem;border-radius:.6rem}
 </style>
 </head>
 <body>
@@ -125,13 +229,17 @@ html.wxbare #wx .wxcard .d,html.wxbare #wx .wxnow .tx,html.wxbare #wx .hl span{c
   <div id="photo" class="panel" hidden><img alt=""><img alt=""><video muted loop playsinline preload="none"></video></div>
 </section>
 
+<div id="remote" hidden><div class="rh"><h1 id="rTitle"></h1><span id="rLeft"></span></div><div id="rBody"></div></div>
+<div id="levelup"><b>LEVEL UP</b><div></div><small></small></div>
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
-const getJSON = url => fetch(url, {cache: "no-store"}).then(r => r.json());
+// the timestamp keeps Android WebView (Fully Kiosk) from answering out of its own cache
+const getJSON = url => fetch(url + (url.includes("?") ? "&" : "?") + "_=" + Date.now(), {cache: "no-store"})
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
 const PAGE_BUILD = "__PAGE_BUILD__";
-let look = {bg_mode: "default", bg_url: "", bg_dim: 30, bg_every: 10, blur: true, photo_panel: true, photo_fill: false, photo_videos: false, wx_days: 3, wx_mono: false, wx_bare: false, text_scale: 100, color_rules: [], greet_name: "", quotes: "", quotes_only: false};
+let look = {bg_mode: "default", bg_url: "", bg_dim: 30, bg_every: 10, blur: true, photo_panel: true, photo_fill: false, photo_videos: false, wx_days: 3, wx_mono: false, wx_bare: false, text_scale: 100, color_rules: [], greet_name: "", quotes: "", quotes_only: false, msg_sound: true};
 const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const pad = n => String(n).padStart(2, "0");
 const ymd = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
@@ -311,7 +419,7 @@ function loadWeather() {
 }
 function renderWeather() {
   const d = wxData; if (!d) return;
-  const n = [3, 5, 7].includes(+look.wx_days) ? +look.wx_days : 3;
+  const n = [1, 3, 5, 7].includes(+look.wx_days) ? +look.wx_days : 3;
   const sig = n + "|" + !!look.wx_mono; if (sig === wxSig) return; wxSig = sig;
   {
     const box = $("wx"); box.innerHTML = ""; box.className = "n" + n;
@@ -375,7 +483,7 @@ function renderWeek() {
     const d0 = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i);
     const d1 = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i + 1);
     const key = ymd(d0);
-    const col = el("div", "day" + (key === todayKey ? " today" : key < todayKey ? " past" : ""));
+    const col = el("div", "day" + (key === todayKey ? " today" : key < todayKey ? " past" : "")); col.dataset.date = key;
     const h = el("h2"); h.append(el("span", null, DAYS[d0.getDay()]), el("b", null, d0.getDate()));
     const list = el("div", "evs");
     const todays = evs.filter(e => e.s < d1 && (e.e > d0 || (+e.e === +e.s && e.s >= d0)));
@@ -399,23 +507,111 @@ function renderWeek() {
 function loadWeek() { getJSON("/api/week").then(d => { weekData = d; renderWeek(); }).catch(() => {}); }
 loadWeek(); setInterval(loadWeek, 5 * 60 * 1000);
 
-/* ---------- lists from the iPhone Shortcut */
+/* ---------- lists: the iPhone Shortcut's, then the ones made in the family app (marked app: true) */
 const ago = s => s < 90 ? "just now" : s < 3600 ? Math.round(s / 60) + "m ago" : s < 86400 ? Math.round(s / 3600) + "h ago" : Math.round(s / 86400) + "d ago";
 let listSig = "";
+/* a soft two-note chime when a message arrives that this screen hasn't shown yet (not on page load) */
+let seenNotes = null, audioCtx = null;
+function newMessageChime(notes) {
+  const ids = new Set(notes.map(n => n.id));
+  const fresh = seenNotes && notes.some(n => !seenNotes.has(n.id));
+  seenNotes = ids;
+  if (!fresh || look.msg_sound === false) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const t0 = audioCtx.currentTime + 0.05;
+    [[880, 0], [1318.5, 0.18]].forEach(([f, dt]) => {          // A5 then E6, bell-like decay
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = "sine"; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t0 + dt);
+      g.gain.exponentialRampToValueAtTime(0.35, t0 + dt + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + 1.2);
+      o.connect(g).connect(audioCtx.destination); o.start(t0 + dt); o.stop(t0 + dt + 1.3);
+    });
+  } catch (e) {}
+}
+function avEl(m) {   // a member's circle: their picture when they have one, else their initial
+  const a = el("div", "av", (m.name || "?")[0].toUpperCase());
+  if (m.photo) { a.classList.add("ph"); a.style.backgroundImage = "url('/avatar/" + encodeURIComponent(m.name) + "?v=" + m.photo + "')"; }
+  return a;
+}
+/* someone's level went up since the last check: a banner and a short fanfare for 10 seconds */
+let lastLevels = null, lastGoals = null, luT;
+function levelUps(party) {
+  const now = {}; ((party && party.members) || []).forEach(m => now[m.name] = m);
+  const up = lastLevels ? Object.values(now).find(m => lastLevels[m.name] && m.level > lastLevels[m.name]) : null;
+  const goal = lastGoals ? Object.values(now).find(m => m.name in lastGoals && (m.goals || 0) > lastGoals[m.name]) : null;
+  lastLevels = Object.fromEntries(Object.values(now).map(m => [m.name, m.level]));
+  lastGoals = Object.fromEntries(Object.values(now).map(m => [m.name, m.goals || 0]));
+  const who = up || goal;
+  if (!who) return;
+  const b = $("levelup"); b.style.setProperty("--lc", who.color);
+  b.querySelector("b").textContent = up ? "LEVEL UP" : "GOAL COMPLETE";
+  b.querySelector("div").textContent = up ? up.name + " reached level " + up.level : goal.name;
+  b.querySelector("small").textContent = up ? up.cls : goal.goal;
+  b.classList.add("on"); clearTimeout(luT); luT = setTimeout(() => b.classList.remove("on"), 10000);
+  if (look.msg_sound === false) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const t0 = audioCtx.currentTime + 0.05;
+    [[523.25, 0], [659.25, 0.14], [783.99, 0.28], [1046.5, 0.42]].forEach(([f, dt]) => {   // C E G C
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = "triangle"; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t0 + dt);
+      g.gain.exponentialRampToValueAtTime(0.3, t0 + dt + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + (dt > 0.4 ? 1.4 : 0.35));
+      o.connect(g).connect(audioCtx.destination); o.start(t0 + dt); o.stop(t0 + dt + 1.5);
+    });
+  } catch (e) {}
+}
 function loadLists() {
   getJSON("/api/lists").then(d => {
-    const sig = JSON.stringify(d.lists) + "|" + Math.floor(d.now / 60);
+    newMessageChime(d.notes || []);
+    levelUps(d.party);
+    const sig = JSON.stringify(d.lists) + JSON.stringify((d.notes || []).map(n => n.id)) + JSON.stringify(d.party || {}) + !!look.kiosk_lists + "|" + Math.floor(d.now / 60);
     if (sig === listSig) return; listSig = sig;
     const box = $("lists"); box.innerHTML = "";
+    // notes from Settings (or a Shortcut) get their own card, newest first, colored by the sender's name rule
+    if ((d.notes || []).length) {
+      const p = el("div", "panel list notes"); p.append(el("h3", null, "Messages"));
+      const ul = el("ul", "items");
+      d.notes.forEach(n => {
+        const li = el("li", null, n.text), c = ruleColor(n.from);
+        if (c) li.style.setProperty("--nc", c);
+        li.append(el("span", "who", (n.from ? n.from + " · " : "") + ago(d.now - n.at)));
+        ul.append(li);
+      });
+      p.append(ul); box.append(p);
+    }
+    const party = d.party || {on: false};
+    if (party.on) {    // the Party panel takes the lists' place, unless Settings turns the lists back on
+      const p = el("div", "panel list party"); p.append(el("h3", null, "Party"));
+      if (!party.quests) p.append(el("div", "empty", "No quests yet. Parents add them in the family app, under Quests."));
+      party.members.forEach(m => {
+        const r = el("div", "mem"); r.style.setProperty("--mc", m.color); r.dataset.name = m.name;
+        const nm = el("div", "nm", m.name); nm.append(el("span", null, "Level " + m.level + " " + m.cls));
+        const lv = el("div", "lv" + (party.quests && !m.left ? " done" : ""), !party.quests ? "" : m.left ? m.left + " quest" + (m.left === 1 ? "" : "s") + " left" : "All done today");
+        const xb = el("div", "xb"), fill = el("i"); fill.style.width = Math.max(2, m.pct) + "%"; xb.append(fill);
+        r.append(avEl(m), nm, lv, xb);
+        p.append(r);
+      });
+      box.append(p);
+    }
+    if (party.on && !look.kiosk_lists) {
+      box.querySelectorAll(".items").forEach(ul => fit(ul, () => el("li", "more")));
+      return;
+    }
     if (!d.lists.length) {
-      const p = el("div", "panel list"); p.append(el("h3", null, "Lists"), el("div", "empty", "Waiting for the iPhone Shortcut to send a Reminders list."));
-      box.append(p); return;
+      const p = el("div", "panel list"); p.append(el("h3", null, "Lists"), el("div", "empty", "No lists yet. Start one in the family app (/app on your phone)."));
+      if (!(d.notes || []).length) box.append(p);
     }
     d.lists.forEach(l => {
       const p = el("div", "panel list");
       const h = el("h3", null, l.name);
       const age = d.now - (l.updated || 0);
-      h.append(el("span", "u" + (age > d.stale_after ? " stale" : ""), age > d.stale_after ? "not updated since " + new Date(l.updated * 1000).toLocaleDateString(undefined, {weekday: "short", month: "short", day: "numeric"}) : ago(age)));
+      if (!l.app) h.append(el("span", "u" + (age > d.stale_after ? " stale" : ""), age > d.stale_after ? "not updated since " + new Date(l.updated * 1000).toLocaleDateString(undefined, {weekday: "short", month: "short", day: "numeric"}) : ago(age)));
       p.append(h);
       if (!l.items.length) { p.append(el("div", "empty", "All done")); box.append(p); return; }
       const ul = el("ul", "items");
@@ -426,9 +622,14 @@ function loadLists() {
     box.querySelectorAll(".items").forEach(ul => fit(ul, () => el("li", "more")));
   }).catch(() => {});
 }
-loadLists(); setInterval(loadLists, 60 * 1000);
+loadLists(); setInterval(loadLists, 15 * 1000);   // a small JSON; nothing redraws unless it changed
+// safety net for a kiosk that runs for weeks: a fresh page load every night at 3 AM
+(function nightly() {
+  const n = new Date(), t = new Date(n); t.setHours(3, 0, 0, 0); if (t <= n) t.setDate(t.getDate() + 1);
+  setTimeout(() => location.reload(), t - n);
+})();
 
-/* ---------- look: wallpaper, darken, glass blur, photo panel. Changed from /settings on a phone or PC;
+/* ---------- look: wallpaper, darken, glass blur, photo panel. Changed from Settings in the family app (/app);
    the kiosk checks once a minute and applies changes without a reload. */
 let lookSig = "", ids = [], vids = new Set(), pi = 0, front = 0, wallTimer = null, lastWall = "";
 function setWall(url) {
@@ -445,7 +646,7 @@ function applyLook() {
   document.documentElement.classList.toggle("blur", look.blur !== false);
   document.documentElement.classList.toggle("wxbare", !!look.wx_bare);
   const rs = JSON.stringify(look.color_rules || []);
-  if (rs !== rulesSig) { rulesSig = rs; buildRules(); renderWeek(); }
+  if (rs !== rulesSig) { rulesSig = rs; buildRules(); renderWeek(); listSig = ""; loadLists(); }
   const ts = String(Math.min(160, Math.max(70, +look.text_scale || 100)) / 100);
   if (document.documentElement.style.getPropertyValue("--ts") !== ts) {
     document.documentElement.style.setProperty("--ts", ts);
@@ -554,6 +755,205 @@ new ResizeObserver(es => {
   clearTimeout(fitT); fitT = setTimeout(() => { renderWeek(); listSig = ""; loadLists(); }, 300);
 }).observe($("week"));
 setInterval(loadLook, 60 * 1000); setInterval(loadPhotos, 60 * 60 * 1000); setInterval(nextPhoto, 60 * 1000);
+/* ---------- the Remote: a phone puts a detail page on this screen (character sheet, weather, month, one day).
+   Checked every 3 seconds; it closes itself when the time's up or a phone taps Back. */
+let scr = {seq: -1}, scrSkew = 0;
+function pollScreen() {
+  getJSON("/api/screen").then(d => {
+    scrSkew = Date.now() / 1000 - d.now;
+    const changed = d.seq !== scr.seq; scr = d;
+    if (changed) showRemote();
+  }).catch(() => {});
+}
+function remoteLeft() {
+  if ($("remote").hidden) return;
+  const left = Math.max(0, Math.round(scr.until - (Date.now() / 1000 - scrSkew)));
+  if (!left) { $("remote").hidden = true; return; }
+  $("rLeft").textContent = (scr.by ? "From " + scr.by + " · " : "") + "back to the dashboard in " + Math.floor(left / 60) + ":" + pad(left % 60);
+}
+setInterval(remoteLeft, 1000);
+function rbox(title) { const b = el("div", "rbox"); if (title) b.append(el("h3", null, title)); return b; }
+async function showRemote() {
+  const box = $("rBody"), page = scr.page;
+  if (!page) { $("remote").hidden = true; return; }
+  box.innerHTML = ""; $("rTitle").textContent = "";
+  try {
+    if (page === "sheet") await remoteSheet(box, scr.arg);
+    else if (page === "weather") await remoteWeather(box);
+    else if (page === "month") await remoteMonth(box, scr.arg);
+    else if (page === "day") await remoteDay(box, scr.arg);
+  } catch (e) { box.append(el("div", "err", "Couldn't load that page: " + e.message)); }
+  $("remote").hidden = false; remoteLeft();
+  box.querySelectorAll(".fitme").forEach(b => fit(b, () => el("div", "e more")));
+}
+async function remoteSheet(box, name) {
+  const R = await getJSON("/api/rpg");
+  const c = R.chars.find(x => x.name.toLowerCase() === String(name).toLowerCase());
+  if (!c) throw new Error(name + " isn't in the family list");
+  $("rTitle").textContent = "Character sheet";
+  const left = el("div", "rcol"), right = el("div", "rcol");
+  const hb = rbox(); hb.style.setProperty("--mc", c.color);
+  const h = el("div", "shead"), who = el("div");
+  who.append(el("div", "nm", c.name), el("div", "cl", "Level " + c.level + " " + c.cls + " · " + (c.xp - c.lvl_floor) + " / " + (c.lvl_next - c.lvl_floor) + " XP to level " + (c.level + 1)));
+  h.append(avEl(c), who, el("div", "gd", c.gold + " gold"));
+  const xb = el("div", "rxb"), fill = el("i"); fill.style.width = Math.max(2, Math.round(100 * (c.xp - c.lvl_floor) / Math.max(1, c.lvl_next - c.lvl_floor))) + "%"; xb.append(fill);
+  hb.append(h, xb);
+  const sb = rbox("Ability scores"), g = el("div", "sgrid");
+  Object.keys(R.stats).forEach(k => { const s = c.stats[k], b = el("div", "sbx"); b.append(el("b", null, k), el("div", null, s.score), el("span", null, (s.mod >= 0 ? "+" : "") + s.mod), el("small", null, R.stats[k])); g.append(b); });
+  sb.append(g); left.append(hb, sb);
+  const goals = (R.goals || []).filter(x => x.person.toLowerCase() === c.name.toLowerCase());
+  const live = goals.filter(x => x.status === "active" || x.status === "claimed"), won = goals.filter(x => x.status === "done");
+  if (R.goals_on && (live.length || won.length)) {
+    const gb = rbox("Goals"); gb.style.flex = "1"; gb.style.setProperty("--mc", c.color); gb.classList.add("fitme");
+    live.forEach(x => { const r = el("div", "rg " + x.status), t = el("div", "gt");
+      t.append(el("span", null, x.title), el("small", null, x.status === "claimed" ? "done! waiting for OK" : x.unit ? x.progress + " of " + x.target + " " + x.unit : x.target > 1 ? x.progress + " of " + x.target : "+" + x.xp + " XP"));
+      const b = el("div", "rxb"), f = el("i"); f.style.width = Math.max(2, x.pct) + "%"; b.append(f); r.append(t, b); gb.append(r); });
+    won.slice(-3).reverse().forEach(x => { const r = el("div", "rg trophy"), t = el("div", "gt"); t.append(el("span", null, x.title), el("small", null, "+" + x.xp + " XP")); r.append(t); gb.append(r); });
+    left.append(gb);
+  }
+  const qb = rbox("Quest log: today"); qb.style.flex = "1";
+  const qs = R.todo[c.name] || [];
+  if (!qs.length) qb.append(el("div", "empty", "No quests today."));
+  qs.forEach(q => { const r = el("div", "rq " + q.state), t = el("div", "tt", q.title);
+    t.append(el("small", null, [q.stat, q.state === "pending" ? "waiting for a parent's OK" : q.week || (q.bounty ? "bounty" : "")].filter(Boolean).join(" · ")));
+    r.append(el("div", "ck"), t, el("div", "xp", "+" + q.xp + " XP · " + q.gold + " gold")); qb.append(r); });
+  const hs = R.habits_on ? (R.habits || []).filter(x => x.active && x.person.toLowerCase() === c.name.toLowerCase()) : [];
+  const ft = R.fitness_on && R.fitness ? R.fitness[c.name] : null;
+  if (hs.length || ft) {
+    const wb = rbox("This week");
+    if (ft) { const r = el("div", "rg"), t = el("div", "gt"); t.append(el("span", null, "Active minutes"), el("small", null, ft.week + " of " + ft.target + (ft.week >= ft.target ? " ✓" : "")));
+      const b = el("div", "rxb"), f = el("i"); f.style.width = Math.max(2, Math.min(100, Math.round(100 * ft.week / Math.max(1, ft.target)))) + "%"; b.append(f); r.append(t, b); wb.append(r); }
+    hs.forEach(x => { const r = el("div", "rh7"), d = el("div", "d7"); x.week.forEach(on => d.append(el("i", on ? "on" : "")));
+      r.append(el("div", "tt", x.title), d, el("small", null, x.week_done + " of " + x.week_aim + " days")); wb.append(r); });
+    wb.style.setProperty("--mc", c.color); right.append(wb);
+  }
+  const lb = rbox("Recent adventures");
+  R.log.filter(d => d.person.toLowerCase() === c.name.toLowerCase() && d.status === "approved").slice(0, 5)
+    .forEach(d => { const r = el("div", "rq approved"), t = el("div", "tt", ({bonus: "Bonus: ", goal: "Goal: ", habit: "Habit: "}[d.note] || "") + d.title); r.append(el("div", "ck"), t, el("div", "xp", "+" + d.xp + " XP")); lb.append(r); });
+  right.prepend(qb); right.append(lb); box.append(left, right);
+}
+async function remoteWeather(box) {
+  const d = await getJSON("/api/weather"); wxData = d; wxSig = ""; renderWeather();
+  if (d.error && !d.days) throw new Error(d.error);
+  $("rTitle").textContent = "Weather" + (d.place ? " in " + d.place : "");
+  const col = el("div", "rcol");
+  const nb = rbox(), now = el("div", "wnow"); now.innerHTML = wxIcon(d.code, d.is_day);
+  const t = el("div"); const today = (d.days || [])[0] || {};
+  const sun = today.sunrise ? " · sunrise " + fmtTime(new Date(today.sunrise)) + ", sunset " + fmtTime(new Date(today.sunset)) : "";
+  t.append(el("div", "t", r(d.temp) + "°"), el("div", "tx", d.text + " · feels like " + r(d.feels) + "° · high " + r(today.high) + "°, low " + r(today.low) + "°"),
+    el("div", "tx", (d.humidity != null ? "Humidity " + r(d.humidity) + "% · " : "") + (d.wind != null ? "wind " + r(d.wind) + (d.units === "metric" ? " km/h" : " mph") : "") + sun));
+  now.append(t); nb.append(now);
+  const hb = rbox("Next 24 hours"), hrs = el("div", "hours");
+  (d.hours || []).filter((x, i) => i % 2 === 0).slice(0, 12).forEach(x => {
+    const c = el("div"); c.append(fmtTime(new Date(x.time))); c.insertAdjacentHTML("beforeend", wxIcon(x.code, x.is_day));
+    c.append(el("b", null, r(x.temp) + "°"), el("span", null, x.rain ? x.rain + "%" : "")); hrs.append(c); });
+  hb.append(hrs);
+  const db = rbox("7 days"), dl = el("div", "wdays"); db.style.flex = "1";
+  (d.days || []).forEach((x, i) => { const w = el("div", "wd"), dd = new Date(x.date + "T12:00:00");
+    w.append(el("span", null, i ? DAYS[dd.getDay()] : "Today")); w.insertAdjacentHTML("beforeend", wxIcon(x.code, 1));
+    w.append(el("span", null, x.text), el("span", null, r(x.high) + "° / " + r(x.low) + "°"), el("span", "lo", x.rain ? x.rain + "% rain" : "")); dl.append(w); });
+  db.append(dl); col.append(nb, hb, db); box.append(col);
+}
+const evColor = e => ruleColor(e.title) || e.color;
+function evsOn(evs, d0) {
+  const d1 = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + 1);
+  return evs.filter(e => e.s < d1 && (e.e > d0 || (+e.e === +e.s && e.s >= d0)));
+}
+async function remoteMonth(box, ym) {
+  ym = ym || ymd(new Date()).slice(0, 7);
+  const m = await getJSON("/api/month?m=" + ym);
+  if (m.error && !m.events) throw new Error(m.error);
+  const [y, mo] = ym.split("-").map(Number);
+  $("rTitle").textContent = new Date(y, mo - 1, 1).toLocaleDateString(undefined, {month: "long", year: "numeric"});
+  const evs = m.events.map(e => Object.assign({}, e, {s: new Date(e.start), e: new Date(e.end)}));
+  const g = el("div", "mgrid"), todayKey = ymd(new Date());
+  ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].forEach(d => g.append(el("div", "dh", d)));
+  const [sy, sm, sd] = m.start.split("-").map(Number);
+  // five rows when the month fits, six when it needs them
+  const rows = new Date(sy, sm - 1, sd + 35).getMonth() === mo - 1 ? 6 : 5;
+  for (let i = 0; i < rows * 7; i++) {
+    const d0 = new Date(sy, sm - 1, sd + i), key = ymd(d0);
+    const c = el("div", "mc" + (d0.getMonth() !== mo - 1 ? " out" : "") + (key === todayKey ? " today" : ""));
+    const es = el("div", "es fitme");
+    evsOn(evs, d0).forEach(e => { const x = el("div", "e", (e.allDay ? "" : fmtTime(e.s) + " ") + e.title); x.style.setProperty("--ec", evColor(e)); es.append(x); });
+    c.append(el("b", null, d0.getDate()), es); g.append(c);
+  }
+  box.append(g);
+}
+async function remoteDay(box, day) {
+  day = day || ymd(new Date());
+  const m = await getJSON("/api/month?m=" + day.slice(0, 7));
+  if (m.error && !m.events) throw new Error(m.error);
+  const [y, mo, d] = day.split("-").map(Number), d0 = new Date(y, mo - 1, d);
+  $("rTitle").textContent = d0.toLocaleDateString(undefined, {weekday: "long", month: "long", day: "numeric"});
+  const evs = evsOn(m.events.map(e => Object.assign({}, e, {s: new Date(e.start), e: new Date(e.end)})), d0);
+  const b = rbox(), l = el("div", "dl"); b.style.flex = "1";
+  if (!evs.length) l.append(el("div", "empty", "Nothing on the calendar."));
+  evs.forEach(e => { const r = el("div", "de"), ti = el("div", "ti", e.title); ti.style.setProperty("--ec", evColor(e));
+    r.append(el("div", "tm", e.allDay ? "All day" : fmtTime(e.s) + (+e.e > +e.s ? " – " + fmtTime(e.e) : "")), ti); l.append(r); });
+  b.append(l); box.append(b);
+}
+pollScreen(); setInterval(pollScreen, 3000);
+/* ---------- TV remote (Fully Kiosk on the Google TV passes the arrow and OK buttons to the page).
+   Arrows move a highlight: weather, the seven days, then each party member. OK opens that page on this
+   screen (through /api/screen, so phones see it too); in the month or day page left/right step through
+   time; Back or OK again closes it. The highlight hides after 20 seconds without a key press. */
+let tvRow = 0, tvCol = 0, tvT = null;
+function tvRows() {
+  const rows = [[$("wx")], [...document.querySelectorAll("#week .day")]];
+  document.querySelectorAll("#lists .party .mem").forEach(m => rows.push([m]));
+  return rows.filter(r => r.length && r[0]);
+}
+function tvPaint(show) {
+  document.querySelectorAll(".tvf").forEach(e => e.classList.remove("tvf"));
+  if (!show) return;
+  const rows = tvRows(); if (!rows.length) return;
+  tvRow = Math.max(0, Math.min(tvRow, rows.length - 1));
+  tvCol = Math.max(0, Math.min(tvCol, rows[tvRow].length - 1));
+  rows[tvRow][tvCol].classList.add("tvf");
+  clearTimeout(tvT); tvT = setTimeout(() => tvPaint(false), 20000);
+}
+function tvSend(page, arg) {
+  fetch("/api/screen", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({page, arg: arg || "", by: "TV remote", secs: 300})})
+    .then(r => r.json()).then(d => { if (!d.error) { scrSkew = Date.now() / 1000 - d.now; const ch = d.seq !== scr.seq; scr = d; if (ch) showRemote(); } }).catch(() => {});
+}
+function tvShift(step) {     // month and day pages: left/right go back and forward in time
+  if (scr.page === "month") {
+    const [y, m] = (scr.arg || ymd(new Date()).slice(0, 7)).split("-").map(Number), d = new Date(y, m - 1 + step, 1);
+    tvSend("month", ymd(d).slice(0, 7));
+  } else if (scr.page === "day") {
+    const [y, m, dd] = (scr.arg || ymd(new Date())).split("-").map(Number);
+    tvSend("day", ymd(new Date(y, m - 1, dd + step)));
+  }
+}
+document.addEventListener("keydown", e => {
+  const k = e.key, code = e.keyCode;
+  const back = k === "Escape" || k === "Backspace" || k === "GoBack" || k === "BrowserBack" || code === 4 || code === 27;
+  const ok = k === "Enter" || k === " " || code === 13 || code === 23;
+  const dir = {ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1]}[k];
+  if (!back && !ok && !dir) return;
+  e.preventDefault();
+  if (!$("remote").hidden) {           // a page is open
+    if (back || ok) tvSend("");
+    else if (dir && dir[1]) tvShift(dir[1]);
+    else if (dir && dir[0] < 0 && scr.page === "day") tvSend("month", (scr.arg || ymd(new Date())).slice(0, 7));   // up: the whole month
+    return;
+  }
+  if (back) { tvPaint(false); return; }
+  const shown = document.querySelector(".tvf");
+  if (dir) {
+    if (shown) {
+      if (dir[0]) { const was = tvRows()[tvRow].length; tvRow += dir[0]; if (tvRows()[tvRow] && tvRows()[tvRow].length !== was) tvCol = tvRows()[tvRow].length > 1 ? Math.round(tvCol * (tvRows()[tvRow].length - 1) / Math.max(1, was - 1)) : 0; }
+      tvCol += dir[1];
+    }
+    tvPaint(true); return;
+  }
+  if (!shown) { tvPaint(true); return; }
+  if (shown.id === "wx") tvSend("weather");
+  else if (shown.classList.contains("day")) tvSend("day", shown.dataset.date);
+  else if (shown.classList.contains("mem")) tvSend("sheet", shown.dataset.name);
+});
+
 </script>
 </body>
 </html>
