@@ -452,6 +452,7 @@ label.f{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
       <label><input type="radio" name="mode" value="bing">Bing picture of the day</label>
       <label><input type="radio" name="mode" value="commons">Wikimedia picture of the day</label>
       <label><input type="radio" name="mode" value="unsplash">Unsplash nature</label>
+      <label><input type="radio" name="mode" value="folder">My folder, one a day</label>
     </div>
     <div id="imageOpts">
       <div class="row">
@@ -1368,12 +1369,19 @@ function paint() {
   $("unsplashOpts").hidden = s.bg_mode !== "unsplash";
   $("uskey").placeholder = s.unsplash_key_set ? "Key saved. Paste a new one to replace it." : "Unsplash Access Key";
   const extra = s.bg_mode === "apod" ? " Video days keep the last picture." : "";
+  if (s.bg_mode === "folder") {
+    const gs = Object.entries(a.groups || {}).map(([k, n]) => k + " " + n).join(", ");
+    $("apodOpts").textContent = (a.ready ? "Today: " + (a.title || "(untitled)") + (a.season ? " (" + a.season + ")" : "") + ". Changes at midnight. " : a.error ? "Nothing to show: " + a.error + ". The screen shows the dark gradient until there is. " : "")
+      + (a.total ? a.total + " pictures (" + gs + ")" : "") + (a.skipped ? ". " + a.skipped + " HEIC or other files skipped; save those as JPEG." : "")
+      + " Folder on the server: " + (a.folder || "data/wallpapers") + ". Subfolders named christmas, halloween, thanksgiving, easter, valentines, july4, new-year, st-patricks or a month only show in their season.";
+  } else
+
   $("apodOpts").textContent = a.error && !a.ready ? a.label + " isn't available right now (" + a.error + "). The screen shows the dark gradient until it is; it retries hourly."
     : a.ready && a.date ? "Today: " + (a.title || "(untitled)") + (a.copyright ? " (© " + a.copyright + ")" : "") + ". Changes once a day." + extra
     : "Fetching today's picture…";
   // still fetching: check again shortly so the status and preview update by themselves
   clearTimeout(window._dailyT);
-  if (daily && !(a.ready && a.date) && !a.error) window._dailyT = setTimeout(() => api("/api/settings").then(d => { s = d; paint(); applyBg(); }), 4000);
+  if (daily && s.bg_mode !== "folder" && !(a.ready && a.date) && !a.error) window._dailyT = setTimeout(() => api("/api/settings").then(d => { s = d; paint(); applyBg(); }), 4000);
   $("panelRow").hidden = $("pfillRow").hidden = $("pvidRow").hidden = !s.album_ready;
   $("imkey").placeholder = s.immich_key_set ? "Key saved. Paste a new one to replace it." : "Immich API key";
   $("dim").value = s.bg_dim; $("dimv").textContent = s.bg_dim + "%";

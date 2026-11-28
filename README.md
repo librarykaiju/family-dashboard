@@ -3,7 +3,8 @@
 A wall or kitchen-screen dashboard built for a weak kiosk PC, plus a phone app that runs it. The kiosk
 shows the clock and greeting, weather, this week's calendar (Monday to Sunday), a family message
 board, a Party panel for chores-as-an-RPG, an optional photo panel from an Immich album, and a
-rotating wallpaper (your own upload, or NASA / Bing / Wikimedia Commons / Unsplash picture of the day).
+rotating wallpaper (your own upload, a folder of your pictures shown one a day with holiday
+subfolders in season, or NASA / Bing / Wikimedia Commons / Unsplash picture of the day).
 
 The server does all the fetching and caching, so the kiosk only renders one page. One Python file
 (standard library plus two calendar packages, SQLite for the app's data), two HTML pages, about 30 MB
@@ -28,6 +29,11 @@ to the home screen). Five tabs:
   Google TV running the page in a kiosk browser.
 - **Messages:** the message board (also fed by email or SMS if you set that up).
 - **Settings:** calendar, weather, wallpaper, photos, colors and the family list.
+
+**Wallpaper folder:** put pictures in `data/wallpapers/` (or set `WALLPAPER_DIR`). Subfolders named
+`christmas`, `thanksgiving`, `halloween`, `easter`, `valentines`, `st-patricks`, `july4`, `new-year` or a
+month only show in their season; everything else fills the other days. Big pictures are shrunk once
+with Pillow, which the compose file installs.
 
 Profile pictures are set on each character sheet; the phone crops and shrinks them before upload.
 

@@ -13,6 +13,7 @@ services:
     working_dir: /app
     command: >
       sh -c "[ -d vendor/recurring_ical_events ] || pip install -q --no-cache-dir --target vendor icalendar recurring-ical-events;
+             [ -d vendor/PIL ] || pip install -q --no-cache-dir --target vendor pillow;
              exec python -u family.py"
     env_file: .env
     environment:
@@ -23,7 +24,7 @@ services:
     ports:
       - 8096:8096
     user: "99:100"
-    mem_limit: 128m
+    mem_limit: 192m    # room for shrinking a big wallpaper
     restart: unless-stopped
     logging:
       options:

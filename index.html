@@ -657,7 +657,7 @@ function applyLook() {
   const dy = look.daily || {}, dailyOk = dy.source === look.bg_mode && dy.ready && !!dy.date;
   const hasWall = look.bg_mode === "image" ? !!look.bg_url : look.bg_mode === "album" || dailyOk;
   $("apodcap").replaceChildren();   // label and title, then the photographer credit on its own line
-  if (dailyOk) $("apodcap").append(el("div", null, dy.label + (dy.title ? " \u00b7 " + dy.title : "")),
+  if (dailyOk && dy.source !== "folder") $("apodcap").append(el("div", null, dy.label + (dy.title ? " \u00b7 " + dy.title : "")),
                                    ...(dy.copyright && dy.source !== "apod" ? [el("div", null, (dy.source === "unsplash" ? "Photo: " : "\u00a9 ") + dy.copyright)] : []));
   document.documentElement.style.setProperty("--dim", (hasWall ? look.bg_dim : 0) / 100);
   clearInterval(wallTimer); wallTimer = null;

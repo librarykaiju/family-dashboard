@@ -108,6 +108,8 @@ SETTINGS_FILE = HERE / "data" / "settings.json"
 BG_FILE = HERE / "data" / "background"
 BG_TYPES = {"image/jpeg", "image/png", "image/webp"}
 BG_MAX = 25 * 1024 * 1024
+WALL_DIR = Path(os.environ.get("WALLPAPER_DIR", "").strip() or HERE / "data" / "wallpapers")   # your own pictures, one a day
+WALL_CACHE = HERE / "data" / "wallpaper-cache"   # smaller copies of big pictures, made once
 AVATAR_DIR = HERE / "data" / "avatars"           # profile pictures, one small JPEG per person
 AVATAR_MAX = 600 * 1024
 DB_FILE = HERE / "data" / "family.db"           # lists made in the app, parent sign-ins (SQLite)
@@ -1544,7 +1546,9 @@ def load_settings():
     out["album_ready"] = immich_ready()
     out["build"] = BUILD
     src = out.get("bg_mode")
-    if src in DAILY_LABELS:
+    if src == "folder":
+        out["daily"] = folder_info()
+    elif src in DAILY_LABELS:
         a = daily_info(src)
         out["daily"] = dict({k: a.get(k) for k in ("date", "title", "copyright", "link", "error")},
                             source=src, label=DAILY_LABELS[src], ready=daily_img(src).exists())
@@ -1582,7 +1586,7 @@ def save_settings(body):
     s = {k: v for k, v in load_settings().items() if k in LOOK_DEFAULTS}
     s["bg_type"] = bg_type()
     if "bg_mode" in body:
-        if body["bg_mode"] not in ("default", "image", "album", *DAILY_LABELS):
+        if body["bg_mode"] not in ("default", "image", "album", "folder", *DAILY_LABELS):
             raise ValueError("unknown wallpaper choice")
         s["bg_mode"] = body["bg_mode"]
         if s["bg_mode"] in DAILY_LABELS:
@@ -1737,6 +1741,152 @@ def bg_type():
 
 
 # ---------------------------------------------------------------- picture of the day (wallpaper)
+# ---------------------------------------------------------------- wallpapers from your own folder
+# One picture a day from WALL_DIR (data/wallpapers by default). Subfolders named after a holiday or a
+# month only show in their season; pictures anywhere else fill the other days. The order is shuffled
+# once a year, so nothing repeats until every picture in that group has had its day.
+WALL_EXT = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".gif": "image/gif"}
+MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"]
+HOLIDAY_NAMES = {"newyear": "New Year", "valentines": "Valentine's Day", "stpatricks": "St. Patrick's Day", "easter": "Easter",
+                 "july4": "Fourth of July", "halloween": "Halloween", "thanksgiving": "Thanksgiving", "christmas": "Christmas"}
+HOLIDAY_ALIASES = {"newyears": "newyear", "newyearseve": "newyear", "nye": "newyear", "valentine": "valentines",
+                   "valentinesday": "valentines", "stpatricksday": "stpatricks", "stpattys": "stpatricks", "stpaddys": "stpatricks",
+                   "fourthofjuly": "july4", "4thofjuly": "july4", "independenceday": "july4", "jul4": "july4",
+                   "xmas": "christmas", "christmastime": "christmas"}
+_wall_lock = threading.Lock()
+
+
+def easter(y):
+    a, b, c = y % 19, y // 100, y % 100
+    d, e = b // 4, b % 4
+    g = (8 * b + 13) // 25
+    h = (19 * a + b - d - g + 15) % 30
+    i, k = c // 4, c % 4
+    l = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 19 * l) // 433
+    month = (h + l - 7 * m + 90) // 25
+    return dt.date(y, month, (h + l - 7 * m + 33 * month + 19) % 32)
+
+
+def holiday_windows(y):
+    """Each holiday's season this year, first and last day."""
+    nov1 = dt.date(y, 11, 1)
+    thanks = nov1 + dt.timedelta(days=(3 - nov1.weekday()) % 7 + 21)    # fourth Thursday
+    e = easter(y)
+    D = dt.date
+    return {"newyear": [(D(y, 1, 1), D(y, 1, 2)), (D(y, 12, 27), D(y, 12, 31))],
+            "valentines": [(D(y, 2, 1), D(y, 2, 14))], "stpatricks": [(D(y, 3, 1), D(y, 3, 17))],
+            "easter": [(e - dt.timedelta(days=14), e + dt.timedelta(days=1))], "july4": [(D(y, 6, 28), D(y, 7, 5))],
+            "halloween": [(D(y, 10, 1), D(y, 10, 31))], "thanksgiving": [(nov1, thanks)],
+            "christmas": [(thanks + dt.timedelta(days=1), D(y, 12, 26))]}
+
+
+def folder_key(name):
+    k = re.sub(r"[^a-z0-9]", "", name.lower())
+    k = HOLIDAY_ALIASES.get(k, k)
+    if k in HOLIDAY_NAMES:
+        return k
+    for i, m in enumerate(MONTHS):
+        if k in (m, m[:3], str(i + 1), f"{i + 1:02d}"):
+            return MONTHS[i]
+    return ""      # any other folder name: its pictures can show any day
+
+
+def wall_files():
+    """{group: [paths]} where group is a holiday key, a month name or "" for any day."""
+    groups, skipped = {}, 0
+    if not WALL_DIR.is_dir():
+        return groups, skipped
+    for f in sorted(WALL_DIR.rglob("*")):
+        if not f.is_file() or f.name.startswith("."):
+            continue
+        if f.suffix.lower() not in WALL_EXT:
+            skipped += f.suffix.lower() in (".heic", ".heif", ".avif", ".tif", ".tiff", ".bmp")
+            continue
+        rel = f.relative_to(WALL_DIR).parts
+        g = next((k for k in (folder_key(p) for p in rel[:-1]) if k), "")
+        groups.setdefault(g, []).append(f)
+    return groups, skipped
+
+
+def wall_today(today=None):
+    today = today or dt.datetime.now(LOCAL_TZ).date()
+    groups, skipped = wall_files()
+    active = [h for h, spans in holiday_windows(today.year).items() if h in groups and any(a <= today <= b for a, b in spans)]
+    month = MONTHS[today.month - 1]
+    if active:
+        pick_from, why = active, ", ".join(HOLIDAY_NAMES[h] for h in active)
+    elif month in groups:
+        pick_from, why = [month], month.title()
+    elif "" in groups:
+        pick_from, why = [""], ""
+    else:
+        pick_from, why = [], ""
+    pool = sorted(f for g in pick_from for f in groups[g])
+    total = sum(len(v) for v in groups.values())
+    if not pool:
+        return None, why, total, skipped, groups
+    random.Random(f"{today.year}:{'|'.join(pick_from)}").shuffle(pool)
+    return pool[today.timetuple().tm_yday % len(pool)], why, total, skipped, groups
+
+
+def folder_info():
+    try:
+        f, why, total, skipped, groups = wall_today()
+    except OSError as e:
+        return {"source": "folder", "label": "My folder", "ready": False, "error": str(e)}
+    day = dt.datetime.now(LOCAL_TZ).date().isoformat()
+    info = {"source": "folder", "label": "My folder", "ready": bool(f), "total": total, "skipped": skipped,
+            "folder": str(WALL_DIR), "season": why,
+            "groups": {(HOLIDAY_NAMES.get(g) or g.title() or "Any day"): len(v) for g, v in groups.items()}}
+    if f:
+        st = f.stat()
+        info.update(date=day + "-" + hashlib.sha256(f"{f}:{st.st_mtime_ns}:{st.st_size}".encode()).hexdigest()[:10],
+                    title=f.stem.replace("_", " ").replace("-", " "))
+    elif not total:
+        info["error"] = "The folder is empty. Copy pictures into " + str(WALL_DIR)
+    else:
+        info["error"] = "none of its pictures are in season today"
+    return info
+
+
+def wall_bytes():
+    """Today's picture, shrunk once to about screen size if it's big and Pillow is installed."""
+    f = wall_today()[0]
+    if not f:
+        return None, None
+    st = f.stat()
+    ctype = WALL_EXT[f.suffix.lower()]
+    if ctype == "image/gif" or st.st_size < 400 * 1024:
+        return f.read_bytes(), ctype
+    out = WALL_CACHE / (hashlib.sha256(f"{f}:{st.st_mtime_ns}:{st.st_size}".encode()).hexdigest()[:20] + ".jpg")
+    if out.exists():
+        return out.read_bytes(), "image/jpeg"
+    try:
+        from PIL import Image, ImageOps
+    except ImportError:
+        return f.read_bytes(), ctype
+    with _wall_lock:
+        if not out.exists():
+            try:
+                with Image.open(f) as im:
+                    im.draft("RGB", (1920, 1080))          # JPEGs decode at a fraction of full size: less memory
+                    im = ImageOps.exif_transpose(im).convert("RGB")
+                    scale = max(1920 / im.width, 1080 / im.height)
+                    if scale < 1:
+                        im = im.resize((round(im.width * scale), round(im.height * scale)), Image.LANCZOS)
+                    WALL_CACHE.mkdir(parents=True, exist_ok=True)
+                    tmp = out.with_suffix(".tmp")
+                    im.save(tmp, "JPEG", quality=85, optimize=True)
+                    tmp.replace(out)
+                    for old in sorted(WALL_CACHE.glob("*.jpg"), key=lambda p: p.stat().st_mtime)[:-40]:
+                        old.unlink(missing_ok=True)     # keep the last 40 copies
+            except Exception as e:
+                log(f"wallpaper folder: couldn't shrink {f.name}: {e}")
+                return f.read_bytes(), ctype
+    return out.read_bytes(), "image/jpeg"
+
+
 # Each source keeps today's picture in data/<source> and its details in data/<source>.json
 # ({date, title, copyright, link, type, error, tried}). NASA's stays at data/apod as before.
 DAILY_LABELS = {"apod": "NASA picture of the day", "bing": "Bing picture of the day",
@@ -2333,6 +2483,12 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_json(immich_albums())
                 except Exception as e:
                     self.send_json({"albums": [], "error": str(e)})
+            elif path == "/daily/folder":
+                data, ctype = wall_bytes()
+                if not data:
+                    self.send_error(HTTPStatus.NOT_FOUND)
+                    return
+                self.send_body(data, ctype, "public, max-age=86400")
             elif path == "/apod" or (path.startswith("/daily/") and path[7:] in DAILY_LABELS):
                 src = "apod" if path == "/apod" else path[7:]
                 if not daily_img(src).exists():
@@ -2384,6 +2540,10 @@ def main():
         f"weather={'yes' if cur_place() else 'no'}  list-token={'set' if LIST_TOKEN else 'MISSING'}  "
         f"photos={'yes' if immich_ready() else 'no'}  tz={LOCAL_TZ}")
     db_init()
+    try:
+        WALL_DIR.mkdir(parents=True, exist_ok=True)    # so the folder is there to copy pictures into
+    except OSError:
+        pass
     threading.Thread(target=daily_loop, daemon=True).start()
     threading.Thread(target=mail_loop, daemon=True).start()
     ThreadingHTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
