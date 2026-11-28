@@ -1,0 +1,1529 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Family</title>
+<link rel="manifest" href="/app.webmanifest">
+<link rel="apple-touch-icon" href="/app-icon-180.png">
+<link rel="icon" type="image/png" href="/app-icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Family">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f1115">
+<style>
+/* The family app: the phone side of the kitchen screen. Same dark glass look as the kiosk and start page.
+   No frameworks, no build step: one page, hash routes (#lists, #list/3, #messages, #settings). */
+:root{--bg:#0f1115;--panel:rgba(16,18,23,.62);--line:rgba(255,255,255,.12);--ink:#eceef1;--muted:#a0a6b1;--faint:#7a808b;
+  --accent:#f0b84a;--field:rgba(0,0,0,.28);--bad:#f19999;--ok:#7fd6a4;--dim:.3;--me:#f0b84a;
+  --st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg)}
+body{margin:0;min-height:100vh;color:var(--ink);font:16px/1.45 "Inter","Segoe UI",system-ui,-apple-system,sans-serif;
+  padding:calc(64px + var(--st)) 14px calc(88px + var(--sb))}
+#bg{position:fixed;inset:0;z-index:-1;background:radial-gradient(1200px 700px at 15% 0%,#26324d 0%,transparent 60%),
+  radial-gradient(900px 600px at 100% 100%,#2b2240 0%,transparent 55%),var(--bg);background-size:cover;background-position:center}
+#bg::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,var(--dim))}
+main{max-width:640px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+a{color:var(--accent)}
+/* top bar and tabs */
+header{position:fixed;top:0;left:0;right:0;z-index:4;padding:calc(10px + var(--st)) 14px 10px;display:flex;align-items:center;gap:10px;
+  background:rgba(12,14,18,.78);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
+header h1{flex:1;font-size:20px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#back{font:inherit;font-size:28px;line-height:1;background:none;border:0;color:var(--accent);padding:0 6px 2px 0;cursor:pointer}
+#meBtn{display:flex;align-items:center;gap:7px;font:inherit;font-size:15px;color:var(--ink);background:var(--field);border:1px solid var(--line);
+  border-radius:20px;padding:5px 12px 5px 6px;cursor:pointer}
+.dot{width:20px;height:20px;border-radius:50%;background:var(--c,#888);flex:none}
+nav{position:fixed;bottom:0;left:0;right:0;z-index:4;display:flex;justify-content:center;gap:4px;padding:6px 8px calc(6px + var(--sb));
+  background:rgba(12,14,18,.82);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-top:1px solid var(--line)}
+nav a{flex:1;max-width:160px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;color:var(--muted);text-decoration:none;font-size:12px;font-weight:600;border-radius:10px}
+nav a svg{width:26px;height:26px}
+nav a.on{color:var(--accent)}
+/* panels */
+section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;
+  -webkit-backdrop-filter:blur(18px) saturate(140%);backdrop-filter:blur(18px) saturate(140%);box-shadow:0 8px 32px rgba(0,0,0,.28)}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 12px;font-weight:600}
+.modes{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.modes label{border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center;cursor:pointer;background:var(--field)}
+.modes input{display:none}
+.modes label:has(input:checked){border-color:var(--accent);background:rgba(240,184,74,.16)}
+.modes label.off{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+input[type=url],input[type=text],input[type=password],input[type=tel],input[type=date],textarea,select{flex:1;min-width:0;font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:9px;padding:9px 11px}
+input[type=date]{color-scheme:dark;box-sizing:border-box}
+select{flex:none}
+textarea{width:100%;min-height:120px;resize:vertical;font:inherit;line-height:1.4}
+input[type=range]{flex:1;accent-color:var(--accent)}
+input[type=color]{width:44px;height:38px;padding:2px;border:1px solid var(--line);border-radius:9px;background:var(--field);flex:none;cursor:pointer}
+.btn{font:inherit;font-weight:600;border-radius:9px;padding:9px 14px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:#0f1115;white-space:nowrap}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.danger{background:transparent;color:var(--bad);border-color:rgba(241,153,153,.4)}
+.lrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.lrow:last-child{border-bottom:0}
+.lrow small{display:block;color:var(--muted)}
+.sw{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0}
+.sw small{display:block;color:var(--muted)}
+.sw input{appearance:none;-webkit-appearance:none;width:46px;height:26px;border-radius:13px;background:rgba(255,255,255,.18);position:relative;flex:none;cursor:pointer;transition:background .15s;margin:0}
+.sw input::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s}
+.sw input:checked{background:var(--accent)}
+.sw input:checked::after{left:23px}
+.note{color:var(--muted);font-size:13px;margin-top:10px}
+#msg{position:fixed;left:50%;bottom:calc(84px + var(--sb));transform:translateX(-50%);max-width:calc(100% - 32px);padding:10px 16px;border-radius:12px;background:rgba(16,18,23,.94);border:1px solid var(--line);font-size:14px;text-align:center;z-index:6}
+#msg:empty{display:none}
+#msg.err{color:var(--bad)} #msg.ok{color:var(--ok)}
+[hidden]{display:none!important}
+.view{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+/* lists overview */
+.card{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer}
+.card .name{flex:1;font-size:17px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .count{color:var(--muted);font-size:14px;white-space:nowrap}
+.card .chev{color:var(--faint);font-size:22px;line-height:1}
+.tag{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--faint);border:1px solid var(--line);border-radius:6px;padding:1px 6px;white-space:nowrap}
+.group{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#d4d8de;margin:8px 4px -6px;font-weight:600;text-shadow:0 1px 8px rgba(0,0,0,.6)}
+/* one list */
+.add{display:flex;gap:8px;position:sticky;top:calc(64px + var(--st));z-index:2}
+.add input{font-size:17px;padding:12px 14px;background:rgba(10,12,16,.85)}
+.items{list-style:none;margin:0;padding:0}
+.item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);min-height:52px}
+.item:last-child{border-bottom:0}
+.chk{width:30px;height:30px;border-radius:50%;border:2px solid rgba(255,255,255,.35);background:none;flex:none;cursor:pointer;padding:0;display:grid;place-items:center}
+.chk svg{width:18px;height:18px;opacity:0}
+.item.done .chk{background:var(--ok);border-color:var(--ok)}
+.item.done .chk svg{opacity:1}
+.item .t{flex:1;min-width:0;font-size:17px;cursor:text;overflow-wrap:anywhere}
+.item.done .t{color:var(--faint)} .item.done .tx{text-decoration:line-through}
+.item .t small{display:block;font-size:12px;color:var(--faint);text-decoration:none}
+.item input[type=text]{font-size:17px;padding:7px 10px}
+.x{font:inherit;font-size:13px;background:none;border:1px solid rgba(241,153,153,.4);color:var(--bad);border-radius:8px;padding:6px 10px;cursor:pointer}
+.donehead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;padding-top:10px}
+.donehead button{font:inherit;font-size:14px;background:none;border:0;color:var(--muted);cursor:pointer;padding:4px 0}
+.empty{color:var(--muted);text-align:center;padding:14px 0}
+/* people picker */
+#sheet{position:fixed;inset:0;z-index:8;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}
+#sheet>div{width:100%;max-width:640px;background:#171a21;border:1px solid var(--line);border-radius:18px 18px 0 0;padding:20px 18px calc(22px + var(--sb))}
+#sheet h2{font-size:15px;text-transform:none;letter-spacing:0;color:var(--ink);margin-bottom:14px}
+.people{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.people button{display:flex;align-items:center;gap:10px;font:inherit;font-size:17px;font-weight:600;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:12px;padding:14px;cursor:pointer}
+.people button.on{border-color:var(--accent);background:rgba(240,184,74,.14)}
+/* PIN */
+.pin{display:flex;flex-direction:column;align-items:center;gap:14px;padding:26px 18px}
+.pin input{font-size:28px;letter-spacing:.4em;text-align:center;width:12ch;flex:none}
+/* quests */
+.hero{display:flex;align-items:center;gap:14px;cursor:pointer}
+.av{width:52px;height:52px;border-radius:50%;background:var(--c,#555);color:#0f1115;font-weight:800;font-size:24px;display:grid;place-items:center;flex:none;box-shadow:0 0 0 3px rgba(255,255,255,.12)}
+.av.sm{width:36px;height:36px;font-size:16px}
+.av.ph{background-size:cover;background-position:center;color:transparent}
+.hab{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.hab:last-child{border-bottom:0}
+.hab .tap{width:46px;height:46px;border-radius:50%;border:2px solid var(--faint);background:none;color:var(--ink);font:inherit;font-weight:700;font-size:15px;flex:none;display:grid;place-items:center;padding:0}
+.hab .tap.full{background:#7fd6a4;border-color:#7fd6a4;color:#0f1115}
+.hab .tap svg{width:22px;height:22px}
+.hab .t{flex:1;min-width:0}
+.hab .t b{font-weight:600;display:block}
+.hab .t small{color:var(--muted);font-size:13px}
+.hab.off{opacity:.5}
+.dots{display:inline-flex;gap:4px;margin-left:6px;vertical-align:middle}
+.dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15)}
+.dots i.on{background:#7fd6a4}
+.dots i.today{box-shadow:0 0 0 1.5px var(--muted)}
+.hab .mini{background:none;border:0;color:var(--muted);font-size:13px;padding:6px}
+.fitbar{display:flex;align-items:center;gap:10px}
+.fitbar .bar{flex:1;margin-top:0;height:12px}
+.fitweek{display:flex;gap:6px;align-items:flex-end;height:46px;margin:12px 0 2px}
+.fitweek div{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end}
+.fitweek i{display:block;width:100%;border-radius:4px 4px 0 0;background:var(--c,var(--accent));min-height:2px}
+.fitweek span{font-size:11px;color:var(--faint)}
+.fitweek div.today span{color:var(--ink)}
+.wk{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:15px}
+.wk:last-child{border-bottom:0}
+.wk small{display:block;color:var(--faint)}
+.hero .who{flex:1;min-width:0}
+.hero .nm{font-size:19px;font-weight:700}
+.hero .cl{color:var(--muted);font-size:14px}
+.bar{height:10px;border-radius:5px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:6px}
+.bar>i{display:block;height:100%;background:var(--c,var(--accent));border-radius:5px}
+.gold{color:#f3cf6b;font-weight:700;white-space:nowrap}
+.qx{font-size:13px;color:var(--muted);white-space:nowrap;text-align:right}
+.qx b{color:var(--ink);font-weight:700}
+.item.pending .chk{border-color:var(--accent);border-style:dashed}
+.item.pending .chk::after{content:"…";color:var(--accent);font-weight:800;margin-top:-6px}
+.item.approved .chk{background:var(--ok);border-color:var(--ok)}
+.item.approved .chk svg{opacity:1}
+.item.approved .tx,.item.taken .tx{color:var(--faint)}
+.item.taken .chk{opacity:.3;cursor:default}
+.statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{border:1px solid var(--line);border-radius:12px;background:var(--field);text-align:center;padding:10px 4px 8px}
+.stat .ab{font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--accent)}
+.stat .sc{font-size:30px;font-weight:800;line-height:1.1}
+.stat .md{display:inline-block;font-size:13px;font-weight:700;border:1px solid var(--line);border-radius:10px;padding:0 8px;margin-top:2px}
+.stat small{display:block;color:var(--faint);font-size:11px;margin-top:4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{font:inherit;font-size:14px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:16px;padding:6px 12px;cursor:pointer}
+.chips button.on{border-color:var(--accent);background:rgba(240,184,74,.18);color:var(--accent);font-weight:600}
+.mq{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.mq:last-child{border-bottom:0}
+.mq .t{flex:1;min-width:0}
+.mq small{display:block;color:var(--muted)}
+.mq.off{opacity:.5}
+.logrow{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:15px}
+.logrow:last-child{border-bottom:0}
+.logrow small{color:var(--faint);display:block}
+label.f{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
+.goal{padding:10px 0;border-bottom:1px solid var(--line)}
+.goal:last-child{border-bottom:0}
+.goal .gt{display:flex;align-items:baseline;gap:10px}
+.goal .gt b{flex:1;min-width:0;font-size:16px}
+.goal .gt span{color:var(--muted);font-size:13px;white-space:nowrap}
+.goal small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.goal .gp{display:flex;align-items:center;gap:10px;margin-top:6px}
+.goal .gp .bar{flex:1;margin-top:0}
+.goal .gp .n{font-size:14px;white-space:nowrap;color:var(--muted)}
+.goal .gp button{min-width:44px}
+.goal.claimed .gt b::after{content:" ★";color:#f5c542}
+.goal.proposed{opacity:.85}
+.goal .gb{display:flex;gap:8px;justify-content:flex-end;margin-top:8px;flex-wrap:wrap}
+.trophy{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line);font-size:15px}
+.trophy:last-child{border-bottom:0}
+.trophy::before{content:"🏆"}
+.trophy span{flex:1;min-width:0}
+.trophy small{color:var(--faint)}
+</style>
+</head>
+<body>
+<div id="bg"></div>
+<header>
+  <button id="back" hidden aria-label="Back">‹</button>
+  <h1 id="title">Quests</h1>
+  <button id="meBtn" hidden><span class="dot" id="meDot"></span><span id="meName"></span></button>
+</header>
+<main>
+
+<!-- ======== quests ======== -->
+<div class="view" id="v-quests" hidden>
+  <section class="hero" id="myHero"></section>
+  <section><h2>Your quests today</h2><div id="myQuests"></div></section>
+  <section id="myGoalsBox" hidden><h2>Your goals</h2><div id="myGoals"></div>
+    <div class="row"><a class="btn ghost" id="goalNew" href="#goal/new" style="text-decoration:none">Propose a goal</a></div></section>
+  <section id="myHabitsBox" hidden><h2>Habits</h2><div id="myHabits"></div>
+    <div class="row"><a class="btn ghost" id="habNew" href="#habit/new" style="text-decoration:none">New habit</a></div></section>
+  <section id="myFitBox" hidden><h2>Activity this week</h2><div id="myFit"></div></section>
+  <section id="bountyBox" hidden><h2>Bounty board</h2><p class="note" style="margin:-6px 0 6px">Anyone can take these. First one done gets the reward.</p><div id="bounty"></div></section>
+  <section id="okBox" hidden><h2>Waiting for a parent's OK</h2><div id="okList"></div><div class="row" id="okAllRow"><button class="btn" id="okAll">Approve all</button></div></section>
+  <section id="redeemBox" hidden><h2>Reward requests</h2><div id="redeemList"></div></section>
+  <section id="gReviewBox" hidden><h2>Goals to look at</h2><div id="gReview"></div></section>
+  <section><h2>The party</h2><div id="party"></div></section>
+  <div class="row" style="justify-content:center;margin-top:0" id="manageRow"><a class="btn ghost" href="#manage" style="text-decoration:none">Manage quests and rewards</a></div>
+</div>
+
+<!-- ======== a character sheet ======== -->
+<div class="view" id="v-sheet" hidden>
+  <section>
+    <div class="hero" style="cursor:default" id="shHero"></div>
+    <div class="row"><button class="btn ghost" id="shCast" style="flex:1">Show on the kitchen screen</button></div>
+    <div class="row" id="shPicRow" hidden><span style="flex:1">Picture</span><button class="btn ghost" id="shPicDel">Remove</button><button class="btn ghost" id="shPic">Change</button></div>
+    <input type="file" id="picFile" accept="image/*" hidden>
+    <div class="row" id="shClassRow" hidden><label for="shClass" style="flex:1">Class</label><select id="shClass"></select></div>
+  </section>
+  <section><h2>Ability scores</h2><div class="statgrid" id="shStats"></div>
+    <p class="note">Each score grows with that kind of quest. Nothing ever goes down.</p></section>
+  <section><h2>Quest log: today</h2><div id="shQuests"></div></section>
+  <section id="shGoalsBox" hidden><h2>Goals</h2><div id="shGoals"></div><div class="row" id="shGoalNewRow"><a class="btn ghost" id="shGoalNew" style="text-decoration:none">New goal</a></div></section>
+  <section id="shHabitsBox" hidden><h2>Habits</h2><div id="shHabits"></div><div class="row" id="shHabNewRow"><a class="btn ghost" id="shHabNew" style="text-decoration:none">New habit</a></div></section>
+  <section id="shFitBox" hidden><h2>Activity this week</h2><div id="shFit"></div>
+    <div class="row" id="shTargetRow" hidden><label for="shTarget" style="flex:1">Weekly goal</label><input type="text" id="shTarget" inputmode="numeric" style="flex:0 0 5rem"> min <button class="btn ghost" id="shTargetGo">Save</button></div></section>
+  <section id="shTrophyBox" hidden><h2>Trophies</h2><div id="shTrophies"></div></section>
+  <section><h2>Reward shop</h2><div id="shShop"></div></section>
+  <section id="shBonusBox" hidden><h2>Award a bonus</h2>
+    <div class="row" style="margin-top:0"><input type="text" id="bNote" maxlength="80" placeholder="What for? e.g. Helped Grandma"></div>
+    <div class="row"><input type="text" id="bXp" inputmode="numeric" placeholder="XP" style="flex:0 0 5.5rem"><input type="text" id="bGold" inputmode="numeric" placeholder="Gold" style="flex:0 0 5.5rem"><select id="bStat"></select><button class="btn" id="bGo">Award</button></div>
+  </section>
+  <section><h2>Adventure log</h2><div id="shLog"></div></section>
+</div>
+
+<!-- ======== a goal: propose, edit, approve ======== -->
+<div class="view" id="v-goal" hidden>
+  <section>
+    <p class="note" id="gIntro" style="margin-top:0"></p>
+    <div id="gWhoRow"><label class="f" style="margin-top:0">For</label><div class="chips" id="gWho"></div></div>
+    <label class="f">Goal</label><input type="text" id="gTitle" maxlength="80" placeholder="e.g. Read 20 books, Learn to ride a bike" style="width:100%">
+    <label class="f">Why it matters (optional)</label><input type="text" id="gWhy" maxlength="200" placeholder="e.g. So I can ride to Sam's house" style="width:100%">
+    <label class="f">How you'll count it</label>
+    <div class="row" style="margin-top:0"><input type="text" id="gTarget" inputmode="numeric" style="flex:0 0 5rem" placeholder="1"><input type="text" id="gUnit" maxlength="20" placeholder="books, miles, steps… (blank for done or not done)"></div>
+    <label class="f">Ability it trains</label><select id="gStat" style="width:100%"></select>
+    <label class="f">Finish by (optional)</label><input type="date" id="gDue" style="width:100%">
+    <div id="gRewardBox"><label class="f">Size and reward</label>
+      <select id="gSize" style="width:100%"><option value="small">Small</option><option value="big">Big</option><option value="huge">Huge</option><option value="legendary">Legendary</option></select>
+      <div class="row" style="flex-wrap:nowrap"><input type="text" id="gXp" inputmode="numeric" style="flex:0 0 5rem"> XP <input type="text" id="gGold" inputmode="numeric" style="flex:0 0 5rem"> gold</div></div>
+    <p class="note" id="gKidNote">Mom or Dad will set the reward and say OK. You'll see it under Your goals.</p>
+    <div class="row"><button class="btn" id="gSave">Send it</button><button class="btn ghost" id="gNo" hidden>Not this one</button><button class="btn danger" id="gDel" style="margin-left:auto" hidden>Delete</button></div>
+  </section>
+  <section id="gHistBox" hidden><h2>Progress</h2><div id="gHist"></div></section>
+</div>
+
+<!-- ======== a habit ======== -->
+<div class="view" id="v-habit" hidden>
+  <section>
+    <div id="hWhoRow"><label class="f" style="margin-top:0">For</label><div class="chips" id="hWho"></div></div>
+    <label class="f">Habit</label><input type="text" id="hTitle" maxlength="60" placeholder="e.g. Drink water, Brush teeth, Stretch" style="width:100%">
+    <label class="f">Times a day</label>
+    <div class="row" style="margin-top:0"><input type="text" id="hPer" inputmode="numeric" style="flex:0 0 5rem" placeholder="1"><span class="note" style="margin:0;flex:1">e.g. 2 for brushing teeth, 6 for glasses of water</span></div>
+    <label class="f">Days a week you're aiming for</label><select id="hAim" style="width:100%"></select>
+    <label class="f">Ability it trains</label><select id="hStat" style="width:100%"></select>
+    <div id="hRewardBox"><label class="f">Reward each day it's done</label>
+      <div class="row" style="margin-top:0;flex-wrap:nowrap"><input type="text" id="hXp" inputmode="numeric" style="flex:0 0 5rem"> XP <input type="text" id="hGold" inputmode="numeric" style="flex:0 0 5rem"> gold</div></div>
+    <p class="note" id="hKidNote">Each day you finish it earns XP. Mom or Dad can add gold.</p>
+    <label class="sw" id="hActiveRow"><span>Active<small>Turn off to pause it without losing it.</small></span><input type="checkbox" id="hActive"></label>
+    <div class="row"><button class="btn" id="hSave">Save habit</button><button class="btn danger" id="hDel" style="margin-left:auto" hidden>Delete</button></div>
+  </section>
+</div>
+
+<!-- ======== manage quests and rewards (parents) ======== -->
+<div class="view" id="v-manage" hidden>
+  <section id="mLocked" hidden><p class="note" style="margin:0">Making quests and rewards needs the parent PIN. Unlock it under <a href="#settings">Settings</a>.</p></section>
+  <div class="view" id="mBox">
+  <section id="qForm" hidden>
+    <h2 id="qFormTitle">New quest</h2>
+    <input type="text" id="qTitle" maxlength="80" placeholder="Quest name, e.g. Unload the dishwasher" style="width:100%">
+    <div class="row"><input type="text" id="qNotes" maxlength="300" placeholder="Details (optional)"></div>
+    <label class="f">Ability it trains</label><select id="qStat" style="width:100%"></select>
+    <label class="f">Difficulty and reward</label>
+    <div class="row" style="margin-top:0"><select id="qDiff"><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option><option value="epic">Epic</option></select>
+      <input type="text" id="qXp" inputmode="numeric" style="flex:0 0 4.5rem"> XP <input type="text" id="qGold" inputmode="numeric" style="flex:0 0 4.5rem"> gold</div>
+    <label class="f">How often</label>
+    <select id="qRepeat" style="width:100%"><option value="daily">Every day</option><option value="days">Some days of the week</option><option value="once">Once</option></select>
+    <div class="chips" id="qDays" style="margin-top:8px"></div>
+    <label class="f">Who</label><div class="chips" id="qWho"></div>
+    <p class="note" style="margin-top:6px">Pick nobody to put it on the bounty board, where whoever does it first gets it.</p>
+    <label class="sw"><span>Needs a parent's OK<small>The XP and gold land once a parent approves. Parents' own quests count right away.</small></span><input type="checkbox" id="qOk"></label>
+    <label class="sw" id="qActiveRow"><span>Active<small>Turn off to pause it without losing it.</small></span><input type="checkbox" id="qActive"></label>
+    <div class="row"><button class="btn" id="qSave">Save quest</button><button class="btn ghost" id="qCancel">Cancel</button><button class="btn danger" id="qDel" style="margin-left:auto">Delete</button></div>
+  </section>
+  <section><h2>Quests</h2><div id="mQuests"></div><div class="row"><button class="btn ghost" id="qNew">New quest</button></div></section>
+  <section id="rForm" hidden>
+    <h2 id="rFormTitle">New reward</h2>
+    <div class="row" style="margin-top:0"><input type="text" id="rTitle" maxlength="80" placeholder="e.g. Pick Friday's movie"><input type="text" id="rCost" inputmode="numeric" placeholder="Gold" style="flex:0 0 5rem"></div>
+    <label class="f">For</label><div class="chips" id="rWho"></div>
+    <p class="note" style="margin-top:6px">Pick nobody to offer it to everyone.</p>
+    <label class="sw" id="rActiveRow"><span>In the shop</span><input type="checkbox" id="rActive"></label>
+    <div class="row"><button class="btn" id="rSave">Save reward</button><button class="btn ghost" id="rCancel">Cancel</button><button class="btn danger" id="rDel" style="margin-left:auto">Delete</button></div>
+  </section>
+  <section><h2>Reward shop</h2><div id="mRewards"></div><div class="row"><button class="btn ghost" id="rNew">New reward</button></div></section>
+  <section><h2>Modules</h2>
+    <label class="sw"><span>Goals<small>Long quests with a progress bar. Kids propose their own, you set the reward.</small></span><input type="checkbox" id="mGoals"></label>
+    <label class="sw"><span>Habits<small>Small daily things, tapped off on the phone. Each day done earns a little XP.</small></span><input type="checkbox" id="mHabits"></label>
+    <label class="sw"><span>Fitness<small>Log active minutes for STR XP, with a weekly goal and a bonus for reaching it.</small></span><input type="checkbox" id="mFitness"></label>
+  </section>
+  <section><h2>Kitchen screen</h2>
+    <label class="sw"><span>Party panel<small>Everyone's level, XP and quests left today.</small></span><input type="checkbox" id="mParty"></label>
+    <label class="sw"><span>Lists<small>Show the lists on the kitchen screen too (they're always in the app).</small></span><input type="checkbox" id="mLists"></label>
+  </section>
+  </div>
+</div>
+
+<!-- ======== remote: what the kitchen screen shows ======== -->
+<div class="view" id="v-remote" hidden>
+  <section>
+    <h2>Kitchen screen</h2>
+    <div class="lrow" style="padding-top:0"><span id="scrNow">Showing the dashboard</span><button class="btn ghost" id="scrBack" hidden>Back to dashboard</button></div>
+    <div class="row"><label for="scrSecs" style="flex:1">Show pages for</label>
+      <select id="scrSecs"><option value="60">1 minute</option><option value="120">2 minutes</option><option value="300">5 minutes</option><option value="600">10 minutes</option><option value="1800">30 minutes</option></select></div>
+  </section>
+  <section class="hero" id="rcWeather"><div class="who"><div class="nm">Weather</div><div class="cl" id="rcWx">Hourly and 7-day forecast</div></div><span class="chev">›</span></section>
+  <section><h2>Calendar</h2><div class="chips" id="rcCal"></div></section>
+  <section><h2>Character sheets</h2><div id="rcParty"></div></section>
+  <p class="note" style="text-align:center">Tap something to put it on the kitchen screen.</p>
+</div>
+
+<!-- ======== lists ======== -->
+<div class="view" id="v-lists" hidden>
+  <div id="appLists" class="view"></div>
+  <section id="newList" style="padding:12px 14px">
+    <div class="row" style="margin-top:0"><input type="text" id="newName" maxlength="40" placeholder="New list, e.g. Groceries" enterkeyhint="done"><button class="btn" id="newBtn">Add</button></div>
+  </section>
+  <div id="remLists" class="view"></div>
+</div>
+
+<!-- ======== one list ======== -->
+<div class="view" id="v-list" hidden>
+  <div class="add" id="addRow"><input type="text" id="addText" maxlength="120" placeholder="Add an item" enterkeyhint="send" autocomplete="off"><button class="btn" id="addBtn">Add</button></div>
+  <section id="itemsBox"></section>
+  <section id="listOpts">
+    <h2>This list</h2>
+    <div class="row" style="margin-top:0"><input type="text" id="renameText" maxlength="40"><button class="btn ghost" id="renameBtn">Rename</button></div>
+    <label class="sw" style="margin-top:8px"><span>Show on the kitchen screen<small>Only items not yet checked off are shown there.</small></span><input type="checkbox" id="showSw"></label>
+    <div class="row"><button class="btn ghost" id="upBtn">Move up</button><button class="btn ghost" id="downBtn">Move down</button><button class="btn danger" id="delList" style="margin-left:auto">Delete list</button></div>
+    <p class="note" id="delNote" hidden>Deleting a list needs the parent PIN. Unlock it under Settings.</p>
+  </section>
+  <section id="remInfo" hidden>
+    <p class="note" style="margin-top:0">This list comes from Reminders on the iPhone. Change it there; it updates here and on the kitchen screen when the Shortcut runs.</p>
+    <div class="row" id="remRemoveRow"><button class="btn danger" id="remRemove">Remove from the screen</button></div>
+    <p class="note">If the Shortcut still sends it, it comes back on the next run, so take it out of the Shortcut too.</p>
+  </section>
+</div>
+
+<!-- ======== messages ======== -->
+<div class="view" id="v-messages" hidden>
+  <section>
+    <h2>Message the kitchen screen</h2>
+    <div class="row" style="margin-top:0"><textarea id="ntext" maxlength="300" style="min-height:90px" placeholder="Pizza night Friday. Don't forget your library books!"></textarea></div>
+    <div class="row"><button class="btn" id="nsend">Post message</button><span class="note" id="nfromNote" style="margin:0"></span></div>
+  </section>
+  <section>
+    <h2>On the screen now</h2>
+    <div id="notes"></div>
+    <div class="row" id="nclearRow" hidden><button class="btn ghost" id="nclear">Clear all</button></div>
+  </section>
+</div>
+
+<!-- ======== settings ======== -->
+<div class="view" id="v-settings" hidden>
+  <section id="lockBox" hidden>
+    <div class="pin">
+      <h2 style="margin:0">Settings are locked</h2>
+      <input type="password" id="pinIn" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" placeholder="PIN">
+      <button class="btn" id="pinGo">Unlock</button>
+      <p class="note" style="text-align:center;margin:0">A parent unlocks this phone once; it stays unlocked until you lock it again.</p>
+    </div>
+  </section>
+  <div id="setBox" class="view">
+
+  <section>
+    <h2>Family</h2>
+    <div id="people"></div>
+    <div class="row"><button class="btn ghost" id="addPerson">Add a person</button></div>
+    <p class="note">The names the app asks "who are you?" with. They're marked on list items and messages. Event colors on the calendar are set separately under Calendar colors.</p>
+  </section>
+
+  <section>
+    <h2>Parent PIN</h2>
+    <p class="note" style="margin-top:0" id="pinState"></p>
+    <div class="row"><input type="password" id="newPin" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="new-password" placeholder="New PIN (4 to 8 digits)"><button class="btn ghost" id="setPin">Save PIN</button></div>
+    <div class="row" id="pinBtns" hidden><button class="btn ghost" id="lockNow">Lock this phone</button><button class="btn danger" id="clearPin">Remove the PIN</button></div>
+  </section>
+
+  <section>
+    <h2>Calendar and weather</h2>
+    <div class="row" style="margin-top:0">
+      <input type="url" id="ics" placeholder="Google calendar: Secret address in iCal format">
+      <button class="btn ghost" id="saveIcs">Save</button>
+    </div>
+    <p class="note" id="icsNote">calendar.google.com on a computer &gt; gear &gt; Settings &gt; Family &gt; Integrate calendar &gt; Secret address in iCal format. It's checked when you save, then kept on the server and never shown here again.</p>
+    <div class="row">
+      <input type="text" id="place" placeholder="City, e.g. Portland, OR">
+      <select id="units"><option value="us">°F</option><option value="metric">°C</option></select>
+      <button class="btn ghost" id="savePlace">Save</button>
+    </div>
+    <div class="row">
+      <label for="wxdays" style="flex:1">Forecast</label>
+      <select id="wxdays"><option value="1">Today only</option><option value="3">3 days</option><option value="5">5 days</option><option value="7">7 days</option></select>
+    </div>
+    <label class="sw"><span>Monochrome weather icons<small>White and gray icons instead of colored ones.</small></span><input type="checkbox" id="wxmono"></label>
+    <label class="sw"><span>Weather without a background<small>Drops the glass behind the weather so it sits right on the wallpaper.</small></span><input type="checkbox" id="wxbare"></label>
+  </section>
+
+  <section>
+    <h2>Calendar colors</h2>
+    <div id="rules"></div>
+    <div class="row"><button class="btn ghost" id="addRule">Add a name</button></div>
+    <p class="note">An event whose title contains one of these words gets that color (not case-sensitive, whole words only). Put several words on one line to share a color, like <b>Dad, Alex</b>. The first match wins; anything else keeps the calendar's color.</p>
+  </section>
+
+  <section>
+    <h2>Photos from Immich</h2>
+    <div class="row" style="margin-top:0">
+      <input type="text" id="imkey" autocomplete="off" placeholder="Immich API key">
+      <button class="btn ghost" id="saveImkey">Save</button>
+    </div>
+    <p class="note">In Immich: your avatar &gt; Account Settings &gt; API Keys &gt; New API Key, name it <b>kitchen</b>. If it asks for permissions, tick album.read, asset.read, asset.view and face.read. Paste the key here.</p>
+    <div class="row" id="albumRow" hidden>
+      <select id="album" style="flex:1"></select>
+    </div>
+    <p class="note" id="albumMsg"></p>
+  </section>
+
+  <section>
+    <h2>Wallpaper</h2>
+    <div class="modes">
+      <label><input type="radio" name="mode" value="default">Dark gradient</label>
+      <label><input type="radio" name="mode" value="image">Picture</label>
+      <label id="albumMode"><input type="radio" name="mode" value="album">Photo album</label>
+      <label><input type="radio" name="mode" value="apod">NASA picture of the day</label>
+      <label><input type="radio" name="mode" value="bing">Bing picture of the day</label>
+      <label><input type="radio" name="mode" value="commons">Wikimedia picture of the day</label>
+      <label><input type="radio" name="mode" value="unsplash">Unsplash nature</label>
+      <label><input type="radio" name="mode" value="folder">My folder, one a day</label>
+    </div>
+    <div id="imageOpts">
+      <div class="row">
+        <label class="btn" for="file">Upload a picture…</label>
+        <input type="file" id="file" accept="image/*" hidden>
+      </div>
+      <div class="row">
+        <input type="url" id="url" placeholder="or paste an image address (https://…)">
+        <button class="btn ghost" id="useUrl">Use</button>
+      </div>
+      <p class="note">Uploads are shrunk to the screen's size on this device first, so the kitchen PC never has to decode a huge photo.</p>
+    </div>
+    <div id="unsplashOpts" hidden>
+      <div class="row">
+        <input type="text" id="uskey" autocomplete="off" placeholder="Unsplash Access Key">
+        <button class="btn ghost" id="saveUskey">Save</button>
+      </div>
+      <p class="note">Free: sign up at unsplash.com/developers &gt; Your apps &gt; New Application, then copy the <b>Access Key</b>. One new nature photo a day, with the photographer credited on screen.</p>
+    </div>
+    <p class="note" id="apodOpts" hidden></p>
+    <div id="albumOpts">
+      <div class="row">Change every
+        <select id="every"><option value="5">5 minutes</option><option value="10">10 minutes</option><option value="30">30 minutes</option><option value="60">hour</option><option value="1440">day</option></select>
+      </div>
+      <p class="note" id="albumNote">A random photo from your Immich album.</p>
+    </div>
+    <div class="row">Darken <input type="range" id="dim" min="0" max="85" step="5"> <span id="dimv"></span></div>
+  </section>
+
+  <section>
+    <h2>Look</h2>
+    <label class="sw"><span>Glass blur<small>Frosted panels like the start page. Turn off if the kitchen screen feels sluggish; panels get a little darker instead.</small></span><input type="checkbox" id="blur"></label>
+    <div class="row">Calendar and list text <input type="range" id="tscale" min="70" max="160" step="5"> <span id="tscalev"></span></div>
+    <p class="note">100% is the original size. Bigger text means busy days and long lists show "+N more" sooner.</p>
+    <label class="sw" id="panelRow"><span>Photo panel<small>The rotating photo next to the lists.</small></span><input type="checkbox" id="panel"></label>
+    <label class="sw" id="pfillRow"><span>Fill the photo frame<small>Crops portrait photos to fill the frame, centered on the people in them (the biggest face wins if everyone won't fit).</small></span><input type="checkbox" id="pfill"></label>
+    <p class="note" id="faceMsg" hidden>Your Immich key can't read face data yet, so crops are centered instead of following faces. In Immich: avatar &gt; Account Settings &gt; API Keys, edit <b>kitchen</b> and tick <b>face.read</b> (or make a new key with it and paste it above). This updates within an hour.</p>
+    <label class="sw" id="pvidRow"><span>Play short videos<small>Videos up to a minute long from the album play muted and on a loop. Turn off if the kitchen screen feels sluggish.</small></span><input type="checkbox" id="pvid"></label>
+  </section>
+
+  <section>
+    <h2>Greeting and daily affirmation</h2>
+    <div class="row" style="margin-top:0">
+      <input type="text" id="gname" maxlength="40" placeholder="Name after the greeting, e.g. Smith family (optional)">
+      <button class="btn ghost" id="saveName">Save</button>
+    </div>
+    <p class="note">Shows as "Good morning, Smith family". Morning until noon, afternoon until 5 PM, then evening.</p>
+    <div class="row"><textarea id="quotes" placeholder="Your own affirmations, one per line (optional). They're mixed in with the 100 built-in ones."></textarea></div>
+    <div class="row" style="justify-content:space-between">
+      <label class="sw" style="flex:1"><span>Only use mine<small>Skip the built-in list.</small></span><input type="checkbox" id="qonly"></label>
+    </div>
+    <div class="row"><button class="btn" id="saveQuotes">Save affirmations</button></div>
+    <p class="note">A new one each day at midnight, the same one all day.</p>
+  </section>
+
+  <section>
+    <h2>Messages</h2>
+    <label class="sw"><span>Chime for new messages<small>The kitchen screen plays a short chime when a new message arrives.</small></span><input type="checkbox" id="msound"></label>
+    <div class="row"><label for="ndays" style="flex:1">Keep messages on the screen for</label>
+      <select id="ndays"><option value="1">1 day</option><option value="3">3 days</option><option value="7">a week</option><option value="30">a month</option><option value="0">until removed</option></select></div>
+    <h3 style="font-size:1rem;margin:18px 0 0">Text a note</h3>
+    <p class="note" style="margin-top:4px">Who can post, one per line as <b>number = name</b> or <b>email = name</b>. Anyone else is ignored. Setup is in SETUP.md (Notes board).</p>
+    <div class="row"><textarea id="smspeople" style="min-height:90px" placeholder="405 555 1234 = Mom&#10;mom@example.com = Mom"></textarea></div>
+    <p class="note"><b>Free way:</b> family texts an email address and the board reads that inbox. Proton: the Bridge address (e.g. your-server:1143) and the Bridge password. Gmail: leave the server blank and use an app password.</p>
+    <div class="row"><input type="text" id="mailuser" autocomplete="off" placeholder="board@example.com"></div>
+    <div class="row"><input type="text" id="mailhost" autocomplete="off" placeholder="Mail server (blank = Gmail)"></div>
+    <div class="row"><input type="text" id="mailpass" autocomplete="off" placeholder="Mailbox password"></div>
+    <p class="note" id="mailstat" hidden></p>
+    <p class="note"><b>Or Twilio</b> (a real phone number, about $1.15/month):</p>
+    <div class="row"><input type="text" id="twtoken" autocomplete="off" placeholder="Twilio Auth Token"></div>
+    <div class="row"><button class="btn" id="saveSms">Save</button></div>
+  </section>
+
+  <section>
+    <h2>iPhone Shortcut</h2>
+    <p class="note" style="margin-top:0">The Authorization header value for the Reminders Shortcut (SETUP.md part 2):</p>
+    <div class="row"><input type="text" id="token" readonly><button class="btn ghost" id="copyToken">Copy</button></div>
+    <p class="note">Address: <b>http://&lt;your-server&gt;:8096/api/lists</b></p>
+  </section>
+
+  <p class="note" style="text-align:center"><a href="/">Open the kitchen screen</a></p>
+  </div>
+</div>
+
+<div id="msg"></div>
+</main>
+
+<nav>
+  <a href="#quests" id="t-quests"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="m13 19 6-6M16 16l4 4M19 21l2-2"/></svg>Quests</a>
+  <a href="#lists" id="t-lists"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2"/></svg>Lists</a>
+  <a href="#remote" id="t-remote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M9 9.5 12 12l3-2.5" /></svg>Remote</a>
+  <a href="#messages" id="t-messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/></svg>Messages</a>
+  <a href="#settings" id="t-settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</a>
+</nav>
+
+<div id="sheet" hidden><div>
+  <h2>Who's using this phone?</h2>
+  <div class="people" id="pickPeople"></div>
+  <p class="note">Marks the things you add and check off with your name. Tap your name at the top to change it.</p>
+</div></div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const el = (t, c, txt) => { const e = document.createElement(t); if (c) e.className = c; if (txt != null) e.textContent = txt; return e; };
+const store = {get: k => { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } },
+               set: (k, v) => { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch (e) {} }};
+const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="#0f1115" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
+const PALETTE = ["#f06262", "#a57cf5", "#3cc48a", "#5b9bff", "#f0a53a", "#38bfd2", "#ef7aa8"];
+let s = {}, auth = {pin_set: false, parent: true}, me = store.get("me"), token = store.get("parentToken");
+let L = null, route = {view: "lists"}, editing = null, busy = 0, showDone = false;
+
+/* ---------- talking to the server */
+async function api(path, body) {
+  const h = {};
+  if (token) h["X-Parent"] = token;
+  if (body !== undefined) h["Content-Type"] = "application/json";
+  const r = await fetch(path, body === undefined ? {cache: "no-store", headers: h} : {method: "POST", headers: h, body: JSON.stringify(body)});
+  const d = await r.json().catch(() => ({error: "The kitchen screen's server didn't answer."}));
+  if (d.locked) { auth.parent = false; paintAuth(); }
+  if (!r.ok || d.error) throw new Error(d.error || "Something went wrong");
+  return d;
+}
+let sayT; function say(t, cls) { $("msg").textContent = t; $("msg").className = cls || ""; clearTimeout(sayT); if (cls !== undefined) sayT = setTimeout(() => $("msg").textContent = "", cls === "err" ? 5000 : 2200); }
+const ago = t => { const x = Math.max(0, Date.now() / 1000 - t); return x < 90 ? "just now" : x < 3600 ? Math.round(x / 60) + "m ago" : x < 86400 ? Math.round(x / 3600) + "h ago" : Math.round(x / 86400) + "d ago"; };
+function twice(btn, label, fn) {   // destructive buttons ask for a second tap instead of a dialog
+  btn.onclick = () => {
+    if (btn.dataset.sure !== "1") { btn.dataset.sure = "1"; btn.dataset.was = btn.textContent; btn.textContent = label; setTimeout(() => { btn.dataset.sure = ""; btn.textContent = btn.dataset.was; }, 4000); return; }
+    btn.dataset.sure = ""; btn.textContent = btn.dataset.was; fn();
+  };
+}
+
+/* ---------- who's using this phone */
+const people = () => s.people || [];
+const colorOf = name => (people().find(p => p.name.toLowerCase() === String(name || "").toLowerCase()) || {}).color || "";
+function paintMe() {
+  $("meBtn").hidden = !people().length;
+  $("meName").textContent = me || "Who are you?";
+  $("meDot").style.setProperty("--c", colorOf(me) || "#555");
+  $("nfromNote").textContent = me ? "Signed " + me + "." : "Tap Who are you? at the top to sign it.";
+}
+function pickMe() {
+  const box = $("pickPeople"); box.replaceChildren();
+  people().forEach(p => {
+    const b = el("button", p.name === me ? "on" : ""); const d = el("span", "dot"); d.style.setProperty("--c", p.color);
+    b.append(d, p.name);
+    b.onclick = () => { me = p.name; store.set("me", me); $("sheet").hidden = true; paintMe(); };
+    box.append(b);
+  });
+  $("sheet").hidden = false;
+}
+$("meBtn").onclick = pickMe;
+$("sheet").onclick = e => { if (e.target === $("sheet") && me) $("sheet").hidden = true; };
+
+/* ---------- pages */
+const TABS = ["quests", "lists", "remote", "messages", "settings"], VIEWS = [...TABS, "list", "sheet", "manage", "goal", "habit"];
+const PARENT_TAB = {list: "lists", sheet: "quests", manage: "quests", goal: "quests", habit: "quests"};
+function parseHash() {
+  const h = decodeURIComponent(location.hash.slice(1)) || "quests";
+  if (h.startsWith("list/r")) return {view: "list", rem: true, id: h.slice(6)};
+  if (h.startsWith("list/")) return {view: "list", rem: false, id: +h.slice(5)};
+  if (h.startsWith("sheet/")) return {view: "sheet", id: h.slice(6)};
+  if (h.startsWith("goal/new")) return {view: "goal", id: 0, person: h.slice(9)};
+  if (h.startsWith("goal/")) return {view: "goal", id: +h.slice(5)};
+  if (h.startsWith("habit/new")) return {view: "habit", id: 0, person: h.slice(10)};
+  if (h.startsWith("habit/")) return {view: "habit", id: +h.slice(6)};
+  return {view: VIEWS.includes(h) && !["list", "sheet", "goal", "habit"].includes(h) ? h : "quests"};
+}
+function showView() {
+  VIEWS.forEach(v => $("v-" + v).hidden = v !== route.view);
+  TABS.forEach(v => $("t-" + v).classList.toggle("on", v === route.view || v === PARENT_TAB[route.view]));
+  $("back").hidden = !PARENT_TAB[route.view];
+  $("title").textContent = {quests: "Quests", lists: "Lists", remote: "Remote", messages: "Messages", settings: "Settings", list: "", sheet: "", manage: "Manage quests", goal: "Goal", habit: "Habit"}[route.view];
+  if (route.view === "remote") { renderRemote(); pollScr(); }
+  editing = null;
+  gFilled = hFilled = false;
+  if (["quests", "sheet", "manage", "goal", "habit"].includes(route.view)) { renderRpg(); loadRpg(); }
+  if (route.view === "manage") { $("qForm").hidden = $("rForm").hidden = true; }
+  if (route.view === "lists" || route.view === "list") { renderLists(); loadLists(); }
+  if (route.view === "list") { showDone = false; $("addText").value = ""; }
+  if (route.view === "messages") loadNotes();
+  if (route.view === "settings") { paintAuth(); if (auth.parent) loadSettings(true); }
+  window.scrollTo(0, 0);
+}
+window.onhashchange = () => { route = parseHash(); showView(); };
+$("back").onclick = () => { location.hash = "#" + (PARENT_TAB[route.view] || "quests"); };
+
+/* ---------- quests: characters, XP, gold, rewards */
+let R = null, qEdit = null, rEdit = null;
+const charOf = n => R && R.chars.find(c => c.name.toLowerCase() === String(n || "").toLowerCase());
+const canAct = n => auth.parent || String(n || "").toLowerCase() === String(me || "").toLowerCase();
+const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+async function loadRpg() { try { R = await api("/api/rpg"); renderRpg(); } catch (e) { if (!R) say(e.message, "err"); } }
+async function rpg(body, done) {
+  busy++;
+  const before = charOf(body.person || me);
+  try {
+    R = await api("/api/rpg", Object.assign({by: me}, body));
+    const after = charOf(body.person || me);
+    if (before && after && after.level > before.level) say("Level up! " + after.name + " reached level " + after.level, "ok");
+    else if (done) say(done, "ok");
+    return true;
+  } catch (e) { say(e.message, "err"); return false; }
+  finally { busy--; renderRpg(); }
+}
+function renderRpg() { if (!R) return; if (route.view === "quests") renderQuests(); else if (route.view === "sheet") renderSheet(); else if (route.view === "manage") renderManage(); else if (route.view === "goal") renderGoal(); else if (route.view === "habit") renderHabit(); }
+function avatar(c, small) {
+  const a = el("div", "av" + (small ? " sm" : ""), (c.name || "?")[0].toUpperCase()); a.style.setProperty("--c", c.color);
+  const v = R && R.photos && R.photos[c.name];
+  if (v) { a.classList.add("ph"); a.style.backgroundImage = "url('/avatar/" + encodeURIComponent(c.name) + "?v=" + v + "')"; }
+  return a;
+}
+function heroInto(box, c) {
+  box.replaceChildren();
+  const w = el("div", "who"), bar = el("div", "bar"), fill = el("i");
+  fill.style.width = Math.round(100 * (c.xp - c.lvl_floor) / Math.max(1, c.lvl_next - c.lvl_floor)) + "%"; fill.style.setProperty("--c", c.color);
+  bar.append(fill);
+  w.append(el("div", "nm", c.name), el("div", "cl", "Level " + c.level + " " + c.cls + " · " + (c.xp - c.lvl_floor) + " / " + (c.lvl_next - c.lvl_floor) + " XP to level " + (c.level + 1)), bar);
+  box.append(avatar(c), w, el("div", "gold", c.gold + " gold"));
+}
+function questRow(q, person) {
+  const st = q.state, li = el("li", "item " + st);
+  const b = el("button", "chk"); b.innerHTML = CHECK;
+  const mine = canAct(person);
+  if (st === "todo") {
+    b.setAttribute("aria-label", "Done");
+    b.onclick = () => { if (!mine) { say("Only " + person + " or a parent can check that off", "err"); return; }
+      rpg({op: "quest_done", id: q.id, person}, q.needs_ok && !auth.parent ? "Nice! Sent for a parent's OK" : "+" + q.xp + " XP, +" + q.gold + " gold"); };
+  } else if ((st === "pending" || st === "approved") && mine && q.done_id) {
+    b.setAttribute("aria-label", "Undo");
+    b.onclick = () => rpg({op: "quest_undo", id: q.done_id}, "Undone");
+  }
+  const t = el("div", "t"); t.append(el("span", "tx", q.title));
+  const bits = [R.stats[q.stat] ? q.stat : ""];
+  if (st === "pending") bits.push("waiting for a parent's OK");
+  else if (st === "taken") bits.push("done by " + q.by);
+  else if (q.week) bits.push(q.week);
+  else if (q.repeat === "once") bits.push("one time");
+  if (q.notes) bits.push(q.notes);
+  t.append(el("small", null, bits.filter(Boolean).join(" · ")));
+  const x = el("div", "qx"); const xb = el("b", null, "+" + q.xp + " XP"); x.append(xb, el("div", null, q.gold + " gold"));
+  li.append(b, t, x);
+  return li;
+}
+function questList(box, items, person, empty) {
+  box.replaceChildren();
+  if (!items.length) { box.append(el("div", "empty", empty)); return; }
+  const ul = el("ul", "items"); items.forEach(q => ul.append(questRow(q, person))); box.append(ul);
+}
+function renderQuests() {
+  const c = charOf(me);
+  $("myHero").hidden = !c;
+  if (c) { heroInto($("myHero"), c); $("myHero").onclick = () => { location.hash = "#sheet/" + encodeURIComponent(c.name); }; }
+  const anyQuests = R.quests.some(q => q.active);
+  questList($("myQuests"), c ? (R.todo[c.name] || []).filter(q => !q.bounty) : [], me,
+    !me ? "Tap Who are you? at the top first." : !anyQuests ? (auth.parent ? "No quests yet. Add some under Manage quests and rewards." : "No quests yet. Ask Mom or Dad to add some.") : "Nothing assigned to you today. Check the bounty board.");
+  $("myGoalsBox").hidden = !R.goals_on || !c;
+  if (R.goals_on && c) {
+    goalList($("myGoals"), R.goals.filter(g => g.person.toLowerCase() === c.name.toLowerCase() && g.status !== "done" && (g.status !== "declined" || g.decided_at > Date.now() / 1000 - 7 * 86400)),
+      "No goals yet. What's something big you'd like to do?");
+    $("goalNew").textContent = auth.parent ? "New goal" : "Propose a goal";
+  }
+  $("myHabitsBox").hidden = !R.habits_on || !c;
+  if (R.habits_on && c) habitsInto($("myHabits"), c.name);
+  $("myFitBox").hidden = !R.fitness_on || !c;
+  if (R.fitness_on && c) fitInto($("myFit"), c.name);
+  const rev = auth.parent && R.goals_on ? R.goals.filter(g => g.status === "proposed" || g.status === "claimed") : [];
+  $("gReviewBox").hidden = !rev.length;
+  goalList($("gReview"), rev, "", true);
+  $("bountyBox").hidden = !R.bounty.length;
+  questList($("bounty"), R.bounty.map(q => q.state === "taken" && q.by && q.by.toLowerCase() === String(me).toLowerCase()
+    ? Object.assign({}, q, ((R.todo[me] || []).find(x => x.id === q.id) || {})) : q), me, "");
+  // parents: approvals and reward requests
+  const pend = auth.parent ? R.pending : [];
+  $("okBox").hidden = !pend.length; $("okAllRow").hidden = pend.length < 2;
+  const ok = $("okList"); ok.replaceChildren();
+  pend.forEach(d => {
+    const row = el("div", "lrow"), t = el("span", null, d.person + ": " + d.title);
+    t.append(el("small", null, "+" + d.xp + " XP, " + d.gold + " gold · " + ago(d.at)));
+    const yes = el("button", "btn", "OK"), no = el("button", "btn ghost", "Not yet");
+    yes.onclick = () => rpg({op: "approve", id: d.id}, "Approved"); no.onclick = () => rpg({op: "reject", id: d.id}, "Sent back");
+    const bs = el("div", "row"); bs.style.margin = 0; bs.style.flexWrap = "nowrap"; bs.append(no, yes);
+    row.append(t, bs); ok.append(row);
+  });
+  const reqs = auth.parent ? R.redeems.filter(r => r.status === "pending") : [];
+  $("redeemBox").hidden = !reqs.length;
+  const rl = $("redeemList"); rl.replaceChildren();
+  reqs.forEach(r => {
+    const row = el("div", "lrow"), t = el("span", null, r.person + ": " + r.title); t.append(el("small", null, r.cost + " gold · " + ago(r.at)));
+    const yes = el("button", "btn", "Give it"), no = el("button", "btn ghost", "Deny");
+    yes.onclick = () => rpg({op: "redeem_ok", id: r.id}, "Enjoy!"); no.onclick = () => rpg({op: "redeem_no", id: r.id}, "Denied; the gold is back");
+    const bs = el("div", "row"); bs.style.margin = 0; bs.style.flexWrap = "nowrap"; bs.append(no, yes);
+    row.append(t, bs); rl.append(row);
+  });
+  const p = $("party"); p.replaceChildren();
+  R.chars.forEach(m => {
+    const row = el("div", "hero"); row.style.padding = "8px 0";
+    const w = el("div", "who"), bar = el("div", "bar"), fill = el("i");
+    fill.style.width = Math.round(100 * (m.xp - m.lvl_floor) / Math.max(1, m.lvl_next - m.lvl_floor)) + "%"; fill.style.setProperty("--c", m.color); bar.append(fill);
+    w.append(el("div", "nm", m.name), el("div", "cl", "Level " + m.level + " " + m.cls + " · " + (m.left ? m.left + " left today" : "all done today")), bar);
+    row.append(avatar(m, true), w, el("span", "chev", "›"));
+    row.onclick = () => { location.hash = "#sheet/" + encodeURIComponent(m.name); };
+    p.append(row);
+  });
+  $("manageRow").hidden = !auth.parent;
+}
+function renderSheet() {
+  const c = charOf(route.id);
+  if (!c) { if (R) location.hash = "#quests"; return; }
+  $("title").textContent = c.name;
+  heroInto($("shHero"), c);
+  $("shClassRow").hidden = !canAct(c.name);
+  const sel = $("shClass");
+  if (document.activeElement !== sel) {
+    sel.replaceChildren(); const opts = R.classes.includes(c.cls) ? R.classes : [c.cls, ...R.classes];
+    opts.forEach(k => { const o = el("option", null, k); o.value = k; sel.append(o); }); sel.value = c.cls;
+  }
+  const g = $("shStats"); g.replaceChildren();
+  Object.keys(R.stats).forEach(k => {
+    const s = c.stats[k], b = el("div", "stat");
+    b.append(el("div", "ab", k), el("div", "sc", s.score), el("span", "md", (s.mod >= 0 ? "+" : "") + s.mod), el("small", null, R.stats[k]));
+    g.append(b);
+  });
+  questList($("shQuests"), R.todo[c.name] || [], c.name, "No quests today.");
+  const gs = R.goals_on ? R.goals.filter(g => g.person.toLowerCase() === c.name.toLowerCase()) : [];
+  $("shGoalsBox").hidden = !R.goals_on;
+  goalList($("shGoals"), gs.filter(g => !["done", "declined"].includes(g.status)), "No goals yet.");
+  $("shGoalNewRow").hidden = !canAct(c.name);
+  $("shGoalNew").href = "#goal/new/" + encodeURIComponent(c.name); $("shGoalNew").textContent = auth.parent ? "New goal" : "Propose a goal";
+  $("shHabitsBox").hidden = !R.habits_on;
+  if (R.habits_on) habitsInto($("shHabits"), c.name);
+  $("shHabNewRow").hidden = !canAct(c.name); $("shHabNew").href = "#habit/new/" + encodeURIComponent(c.name);
+  $("shFitBox").hidden = !R.fitness_on;
+  if (R.fitness_on) { fitInto($("shFit"), c.name); $("shTargetRow").hidden = !auth.parent; if (document.activeElement !== $("shTarget")) $("shTarget").value = R.fitness[c.name].target; }
+  $("shPicRow").hidden = !canAct(c.name); $("shPicDel").hidden = !(R.photos || {})[c.name];
+  const won = gs.filter(g => g.status === "done");
+  $("shTrophyBox").hidden = !won.length;
+  const tb = $("shTrophies"); tb.replaceChildren();
+  won.forEach(g => { const r = el("div", "trophy"), t = el("span", null, g.title); r.append(t, el("small", null, new Date(g.done_at * 1000).toLocaleDateString(undefined, {month: "short", day: "numeric"}) + " · +" + g.xp + " XP")); tb.append(r); });
+  // shop
+  const shop = $("shShop"); shop.replaceChildren();
+  const mineR = R.rewards.filter(r => r.active && (!r.who || r.who.split(",").some(w => w.toLowerCase() === c.name.toLowerCase())));
+  if (!mineR.length) shop.append(el("div", "empty", auth.parent ? "The shop is empty. Stock it under Manage quests and rewards." : "The shop is empty for now."));
+  mineR.forEach(r => {
+    const row = el("div", "lrow"), t = el("span", null, r.title); t.append(el("small", null, r.cost + " gold"));
+    const b = el("button", "btn" + (c.gold >= r.cost ? "" : " ghost"), c.gold >= r.cost ? "Redeem" : "Need " + (r.cost - c.gold) + " more");
+    if (c.gold >= r.cost && canAct(c.name)) twice(b, "Tap again to spend " + r.cost, () => rpg({op: "redeem", id: r.id, person: c.name}, auth.parent ? "Redeemed" : "Asked Mom and Dad"));
+    else b.disabled = true;
+    row.append(t, b); shop.append(row);
+  });
+  $("shBonusBox").hidden = !auth.parent;
+  const bs = $("bStat");
+  if (!bs.options.length) Object.keys(R.stats).forEach(k => { const o = el("option", null, k + " " + R.stats[k]); o.value = k; bs.append(o); });
+  // log: finished quests, bonuses and rewards, newest first
+  const lg = $("shLog"); lg.replaceChildren();
+  const items = [...R.log.filter(d => d.person.toLowerCase() === c.name.toLowerCase()).map(d => ({at: d.at, t: ({bonus: "Bonus: ", goal: "Goal: ", habit: "Habit: "}[d.note] || "") + d.title,
+      s: d.status === "approved" ? "+" + d.xp + " XP, +" + d.gold + " gold" : d.status === "pending" ? "waiting for OK" : "sent back"})),
+    ...R.redeems.filter(r => r.person.toLowerCase() === c.name.toLowerCase()).map(r => ({at: r.at, t: "Reward: " + r.title,
+      s: (r.status === "denied" ? "denied" : "-" + r.cost + " gold") + (r.status === "pending" ? ", waiting for OK" : "")}))]
+    .sort((a, b) => b.at - a.at).slice(0, 25);
+  if (!items.length) lg.append(el("div", "empty", "The adventure starts with the first quest."));
+  items.forEach(i => { const row = el("div", "logrow"), t = el("span", null, i.t); t.append(el("small", null, new Date(i.at * 1000).toLocaleString(undefined, {weekday: "short", hour: "numeric", minute: "2-digit"}))); row.append(t, el("span", "qx", i.s)); lg.append(row); });
+}
+$("shClass").onchange = e => rpg({op: "char_save", person: route.id, cls: e.target.value}, "You're a " + e.target.value + " now");
+$("bGo").onclick = async () => {
+  if (await rpg({op: "bonus", person: route.id, xp: $("bXp").value, gold: $("bGold").value, stat: $("bStat").value, note: $("bNote").value}, "Bonus awarded")) { $("bXp").value = $("bGold").value = $("bNote").value = ""; }
+};
+/* manage (parents) */
+function chips(box, opts, selected, multi) {
+  box.replaceChildren();
+  opts.forEach(([v, label]) => {
+    const b = el("button", selected.includes(v) ? "on" : "", label); b.type = "button"; b.dataset.v = v;
+    b.onclick = () => { if (!multi) box.querySelectorAll("button").forEach(x => x.classList.remove("on")); b.classList.toggle("on"); };
+    box.append(b);
+  });
+}
+const chipVals = box => [...box.querySelectorAll("button.on")].map(b => b.dataset.v);
+function describe(q) {
+  const how = q.repeat === "daily" ? "Every day" : q.repeat === "once" ? "Once" : DAYS.filter((d, i) => q.days & (1 << i)).join(", ");
+  return [q.stat, q.diff[0].toUpperCase() + q.diff.slice(1) + " (" + q.xp + " XP, " + q.gold + " gold)", how, q.who ? q.who.replace(/,/g, ", ") : "Bounty board", q.needs_ok ? "needs OK" : ""].filter(Boolean).join(" · ");
+}
+function renderManage() {
+  $("mLocked").hidden = auth.parent; $("mBox").hidden = !auth.parent;
+  if (!auth.parent) return;
+  const mq = $("mQuests"); mq.replaceChildren();
+  if (!R.quests.length) mq.append(el("div", "empty", "No quests yet."));
+  R.quests.forEach(q => {
+    const row = el("div", "mq" + (q.active ? "" : " off")), t = el("div", "t", q.title + (q.active ? "" : " (paused)"));
+    t.append(el("small", null, describe(q)));
+    const b = el("button", "btn ghost", "Edit"); b.onclick = () => openQuest(q);
+    row.append(t, b); mq.append(row);
+  });
+  const mr = $("mRewards"); mr.replaceChildren();
+  if (!R.rewards.length) mr.append(el("div", "empty", "Nothing in the shop yet."));
+  R.rewards.forEach(r => {
+    const row = el("div", "mq" + (r.active ? "" : " off")), t = el("div", "t", r.title);
+    t.append(el("small", null, r.cost + " gold · " + (r.who ? r.who.replace(/,/g, ", ") : "everyone") + (r.active ? "" : " · not in the shop")));
+    const b = el("button", "btn ghost", "Edit"); b.onclick = () => openReward(r);
+    row.append(t, b); mr.append(row);
+  });
+  $("mParty").checked = s.rpg_on !== false; $("mLists").checked = !!s.kiosk_lists; $("mGoals").checked = s.goals_on !== false;
+  $("mHabits").checked = s.habits_on !== false; $("mFitness").checked = s.fitness_on !== false;
+}
+function openQuest(q) {
+  qEdit = q || null;
+  $("qFormTitle").textContent = q ? "Edit quest" : "New quest";
+  const sel = $("qStat"); if (!sel.options.length) Object.keys(R.stats).forEach(k => { const o = el("option", null, k + ": " + R.stats[k]); o.value = k; sel.append(o); });
+  $("qTitle").value = q ? q.title : ""; $("qNotes").value = q ? q.notes : "";
+  $("qStat").value = q ? q.stat : "DEX"; $("qDiff").value = q ? q.diff : "easy";
+  $("qXp").value = q ? q.xp : R.diffs.easy[0]; $("qGold").value = q ? q.gold : R.diffs.easy[1];
+  $("qRepeat").value = q ? q.repeat : "daily";
+  chips($("qDays"), DAYS.map((d, i) => [String(1 << i), d]), q && q.repeat === "days" ? DAYS.map((d, i) => String(1 << i)).filter(v => q.days & +v) : [], true);
+  chips($("qWho"), people().map(p => [p.name, p.name]), q ? (q.who ? q.who.split(",") : []) : [], true);
+  $("qDays").hidden = $("qRepeat").value !== "days";
+  $("qOk").checked = q ? !!q.needs_ok : true; $("qActive").checked = q ? !!q.active : true;
+  $("qActiveRow").hidden = $("qDel").hidden = !q;
+  $("qForm").hidden = false; $("qForm").scrollIntoView({behavior: "smooth"}); if (!q) $("qTitle").focus();
+}
+$("qDiff").onchange = e => { $("qXp").value = R.diffs[e.target.value][0]; $("qGold").value = R.diffs[e.target.value][1]; };
+$("qRepeat").onchange = e => { $("qDays").hidden = e.target.value !== "days"; };
+$("qNew").onclick = () => openQuest(null);
+$("qCancel").onclick = () => { $("qForm").hidden = true; };
+$("qSave").onclick = async () => {
+  const body = {op: "quest_save", id: qEdit && qEdit.id, title: $("qTitle").value, notes: $("qNotes").value, stat: $("qStat").value, diff: $("qDiff").value,
+    xp: $("qXp").value, gold: $("qGold").value, repeat: $("qRepeat").value, days: chipVals($("qDays")).reduce((a, v) => a | +v, 0),
+    who: chipVals($("qWho")).join(","), needs_ok: $("qOk").checked, active: $("qActive").checked};
+  if (await rpg(body, "Quest saved")) $("qForm").hidden = true;
+};
+twice($("qDel"), "Tap again to delete", async () => { if (await rpg({op: "quest_delete", id: qEdit.id}, "Deleted")) $("qForm").hidden = true; });
+function openReward(r) {
+  rEdit = r || null;
+  $("rFormTitle").textContent = r ? "Edit reward" : "New reward";
+  $("rTitle").value = r ? r.title : ""; $("rCost").value = r ? r.cost : "";
+  chips($("rWho"), people().map(p => [p.name, p.name]), r && r.who ? r.who.split(",") : [], true);
+  $("rActive").checked = r ? !!r.active : true; $("rActiveRow").hidden = $("rDel").hidden = !r;
+  $("rForm").hidden = false; $("rForm").scrollIntoView({behavior: "smooth"}); if (!r) $("rTitle").focus();
+}
+$("rNew").onclick = () => openReward(null);
+$("rCancel").onclick = () => { $("rForm").hidden = true; };
+$("rSave").onclick = async () => {
+  if (await rpg({op: "reward_save", id: rEdit && rEdit.id, title: $("rTitle").value, cost: $("rCost").value, who: chipVals($("rWho")).join(","), active: $("rActive").checked}, "Reward saved")) $("rForm").hidden = true;
+};
+twice($("rDel"), "Tap again to delete", async () => { if (await rpg({op: "reward_delete", id: rEdit.id}, "Deleted")) $("rForm").hidden = true; });
+$("okAll").onclick = () => rpg({op: "approve", ids: R.pending.map(d => d.id)}, "All approved");
+$("mParty").onchange = e => save({rpg_on: e.target.checked});
+$("mLists").onchange = e => save({kiosk_lists: e.target.checked});
+$("mGoals").onchange = e => save({goals_on: e.target.checked}).then(loadRpg);
+$("mHabits").onchange = e => save({habits_on: e.target.checked}).then(loadRpg);
+$("mFitness").onchange = e => save({fitness_on: e.target.checked}).then(loadRpg);
+
+/* habits: tap once per time; the day counts when it's full. No streaks, just which days happened */
+const todayIdx = () => (new Date().getDay() + 6) % 7;
+function dots(week) { const d = el("span", "dots"); week.forEach((on, i) => d.append(el("i", (on ? "on" : "") + (i === todayIdx() ? " today" : "")))); return d; }
+function habitsInto(box, person) {
+  box.replaceChildren();
+  const hs = R.habits.filter(h => h.person.toLowerCase() === person.toLowerCase() && (h.active || auth.parent || canAct(person)));
+  if (!hs.length) { box.append(el("div", "empty", canAct(person) ? "No habits yet. Pick one small thing to do every day." : "No habits yet.")); return; }
+  const mine = canAct(person);
+  hs.forEach(h => {
+    const row = el("div", "hab" + (h.active ? "" : " off")), full = h.today >= h.per_day;
+    const b = el("button", "tap" + (full ? " full" : ""));
+    if (h.per_day === 1 || full) b.innerHTML = full ? CHECK : ""; else b.textContent = h.today + "/" + h.per_day;
+    if (h.per_day > 1 && !full && h.today === 0) b.textContent = "0/" + h.per_day;
+    b.setAttribute("aria-label", full ? "Done today" : "Tap when done");
+    b.onclick = () => { if (!mine) { say("Only " + person + " or a parent can tap that", "err"); return; } if (!h.active) { say("That habit is paused", "err"); return; }
+      if (full) { say("Done for today. Tap Undo to take one back"); return; }
+      rpg({op: "habit_tick", id: h.id, delta: 1}, h.today + 1 >= h.per_day ? "+" + h.xp + " XP" + (h.gold ? ", +" + h.gold + " gold" : "") : (h.today + 1) + " of " + h.per_day); };
+    const t = el("div", "t"); t.append(el("b", null, h.title + (h.active ? "" : " (paused)")));
+    const sm = el("small", null, h.week_done + " of " + h.week_aim + " days this week"); sm.append(dots(h.week)); t.append(sm);
+    row.append(b, t);
+    if (mine && h.today > 0) { const u = el("button", "mini", "Undo"); u.onclick = () => rpg({op: "habit_tick", id: h.id, delta: -1}, "Taken back"); row.append(u); }
+    if (mine) { const e = el("a", "mini", "Edit"); e.href = "#habit/" + h.id; e.style.textDecoration = "none"; row.append(e); }
+    box.append(row);
+  });
+}
+let hFilled = false;
+function renderHabit() {
+  const h = route.id ? R.habits.find(x => x.id === route.id) : null;
+  if (!R.habits_on || (route.id && !h)) { location.hash = "#quests"; return; }
+  if (hFilled) return;
+  hFilled = true;
+  const person = h ? h.person : (route.person || me || "");
+  $("title").textContent = h ? "Edit habit" : "New habit";
+  $("hWhoRow").hidden = !auth.parent || !!h;
+  chips($("hWho"), people().map(p => [p.name, p.name]), [people().some(p => p.name === person) ? person : (me || "")], false);
+  const st = $("hStat"); if (!st.options.length) Object.keys(R.stats).forEach(k => { const o = el("option", null, k + ": " + R.stats[k]); o.value = k; st.append(o); });
+  const aim = $("hAim"); if (!aim.options.length) for (let i = 7; i >= 1; i--) { const o = el("option", null, i === 7 ? "Every day" : i + " days a week"); o.value = i; aim.append(o); }
+  $("hTitle").value = h ? h.title : ""; $("hPer").value = h ? h.per_day : ""; $("hAim").value = h ? h.week_aim : 7;
+  $("hStat").value = h ? h.stat : "CON"; $("hXp").value = h ? h.xp : 5; $("hGold").value = h ? h.gold : 1;
+  $("hRewardBox").hidden = !auth.parent; $("hKidNote").hidden = auth.parent;
+  $("hActive").checked = h ? !!h.active : true; $("hActiveRow").hidden = $("hDel").hidden = !h;
+  if (!h) $("hTitle").focus();
+}
+$("hSave").onclick = async () => {
+  const h = route.id ? R.habits.find(x => x.id === route.id) : null;
+  const body = {op: "habit_save", id: h && h.id, title: $("hTitle").value, per_day: $("hPer").value || 1, week_aim: $("hAim").value, stat: $("hStat").value, active: $("hActive").checked};
+  if (auth.parent) Object.assign(body, {xp: $("hXp").value, gold: $("hGold").value});
+  if (!h) body.person = auth.parent ? (chipVals($("hWho"))[0] || me) : me;
+  if (!h && !body.person) { pickMe(); return; }
+  if (await rpg(body, "Habit saved")) history.back();
+};
+twice($("hDel"), "Tap again to delete", async () => { if (await rpg({op: "habit_delete", id: route.id}, "Deleted")) history.back(); });
+
+/* fitness: active minutes against a weekly goal */
+let fitKind = store.get("fitKind") || "Walk", fitMin = 30;
+function fitInto(box, person) {
+  box.replaceChildren();
+  const f = R.fitness[person]; if (!f) return;
+  const c = charOf(person) || {};
+  const top = el("div", "fitbar"), bar = el("div", "bar"), fill = el("i");
+  fill.style.width = Math.max(2, Math.min(100, Math.round(100 * f.week / Math.max(1, f.target)))) + "%"; fill.style.setProperty("--c", c.color || "");
+  bar.append(fill); top.append(bar, el("span", "n", f.week + " / " + f.target + " min"));
+  box.append(top);
+  box.append(el("p", "note", f.bonus || f.week >= f.target ? "Weekly goal reached! +" + R.fit_rules.bonus[0] + " XP, +" + R.fit_rules.bonus[1] + " gold" :
+    (f.target - f.week) + " minutes to go for +" + R.fit_rules.bonus[0] + " XP and " + R.fit_rules.bonus[1] + " gold. Every " + R.fit_rules.xp_per + " minutes is 1 STR XP."));
+  const wk = el("div", "fitweek"), peak = Math.max(30, ...f.by_day);
+  f.by_day.forEach((m, i) => { const d = el("div", i === todayIdx() ? "today" : ""), b = el("i"); b.style.height = Math.round(80 * m / peak) + "%"; b.style.setProperty("--c", c.color || ""); b.title = m + " min";
+    d.append(b, el("span", null, DAYS[i][0])); wk.append(d); });
+  box.append(wk);
+  if (canAct(person)) {
+    const k = el("div", "chips"); k.style.marginTop = "12px";
+    R.fit_kinds.forEach(n => { const b = el("button", n === fitKind ? "on" : "", n); b.type = "button"; b.onclick = () => { fitKind = n; store.set("fitKind", n); k.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); }; k.append(b); });
+    const m = el("div", "chips"); m.style.marginTop = "8px";
+    const inp = el("input"); inp.type = "text"; inp.inputMode = "numeric"; inp.placeholder = "min"; inp.style.flex = "0 0 4.5rem";
+    [15, 30, 45, 60, 90].forEach(n => { const b = el("button", n === fitMin ? "on" : "", n + " min"); b.type = "button"; b.onclick = () => { fitMin = n; inp.value = ""; m.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); }; m.append(b); });
+    inp.oninput = () => { m.querySelectorAll("button").forEach(x => x.classList.remove("on")); };
+    const go = el("button", "btn", "Log it");
+    go.onclick = () => { const mins = +inp.value || fitMin; rpg({op: "fit_log", person, kind: fitKind, minutes: mins}, "Logged " + mins + " min of " + fitKind.toLowerCase()); };
+    const row = el("div", "row"); row.append(inp, go);
+    box.append(k, m, row);
+  }
+  if (f.recent.length) {
+    const h = el("h2", null, "Recent"); h.style.marginTop = "16px"; box.append(h);
+    f.recent.slice(0, 6).forEach(w => {
+      const r = el("div", "wk"), t = el("span", null, w.kind + " · " + w.minutes + " min" + (w.note ? " · " + w.note : ""));
+      t.append(el("small", null, ago(w.at))); r.append(t);
+      if (auth.parent || (canAct(person) && w.at > Date.now() / 1000 - 2 * 86400)) { const x = el("button", "btn ghost", "Remove"); twice(x, "Tap again", () => rpg({op: "fit_undo", id: w.id}, "Removed")); r.append(x); }
+      box.append(r);
+    });
+  }
+}
+$("shTargetGo").onclick = () => rpg({op: "fit_target", person: route.id, minutes: $("shTarget").value}, "Weekly goal saved");
+
+/* profile pictures: cropped to a square and shrunk on the phone, so only a small JPEG is sent */
+$("shPic").onclick = () => $("picFile").click();
+$("picFile").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  try {
+    const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error("That file isn't a picture this phone can read")); i.src = URL.createObjectURL(f); });
+    const side = Math.min(img.naturalWidth, img.naturalHeight), cv = document.createElement("canvas"); cv.width = cv.height = 320;
+    cv.getContext("2d").drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2.6, side, side, 0, 0, 320, 320);
+    URL.revokeObjectURL(img.src);
+    const blob = await new Promise(ok => cv.toBlob(ok, "image/jpeg", 0.85));
+    await sendPic(blob);
+  } catch (err) { say(err.message, "err"); }
+};
+async function sendPic(blob) {
+  busy++;
+  try {
+    const h = {"Content-Type": "image/jpeg"}; if (token) h["X-Parent"] = token;
+    const r = await fetch("/api/avatar?person=" + encodeURIComponent(route.id) + "&by=" + encodeURIComponent(me || ""), {method: "POST", headers: h, body: blob || ""});
+    const d = await r.json().catch(() => ({error: "The kitchen screen's server didn't answer."}));
+    if (!r.ok || d.error) throw new Error(d.error || "Something went wrong");
+    if (R) R.photos = d.photos;
+    say(blob ? "Picture saved" : "Picture removed", "ok");
+  } catch (err) { say(err.message, "err"); }
+  finally { busy--; renderRpg(); }
+}
+twice($("shPicDel"), "Tap again to remove", () => sendPic(null));
+
+/* goals: long quests with a progress bar */
+let gFilled = false;
+const goalCount = g => g.unit ? g.progress + " of " + g.target + " " + g.unit : g.target > 1 ? g.progress + " of " + g.target : g.progress >= g.target ? "Done" : "Not yet";
+const dueText = d => { if (!d) return ""; const [y, m, dd] = d.split("-").map(Number); return "by " + new Date(y, m - 1, dd).toLocaleDateString(undefined, {month: "short", day: "numeric"}); };
+function goalRow(g, review) {
+  const row = el("div", "goal " + g.status), top = el("div", "gt");
+  top.append(el("b", null, (review ? g.person + ": " : "") + g.title), el("span", null, g.status === "declined" ? "" : g.status === "proposed" && !g.xp ? "reward not set" : "+" + g.xp + " XP · " + g.gold + " gold"));
+  row.append(top);
+  const bits = [g.stat, dueText(g.due), g.why];
+  if (g.status === "proposed") bits.unshift(review ? "proposed by " + (g.proposed_by || g.person) : "waiting for Mom or Dad");
+  if (g.status === "declined") bits.unshift("not this time" + (g.note ? ": " + g.note : ""));
+  if (g.status === "claimed") bits.unshift(review ? "says it's done" : "you did it! waiting for a parent's OK");
+  row.append(el("small", null, bits.filter(Boolean).join(" · ")));
+  if (g.status === "active" || g.status === "claimed") {
+    const gp = el("div", "gp"), bar = el("div", "bar"), fill = el("i");
+    fill.style.width = Math.max(2, g.pct) + "%"; fill.style.setProperty("--c", (charOf(g.person) || {}).color || "");
+    bar.append(fill); gp.append(bar, el("span", "n", goalCount(g)));
+    if (g.status === "active" && canAct(g.person) && !review) {
+      if (g.target > 1 && g.progress > 0) { const m = el("button", "btn ghost", "−1"); m.onclick = e => { e.stopPropagation(); rpg({op: "goal_progress", id: g.id, delta: -1}, "Taken back"); }; gp.append(m); }
+      const step = g.target > 1 ? "+1" : "Done";
+      const p = el("button", "btn", step);
+      p.onclick = e => { e.stopPropagation(); rpg({op: "goal_progress", id: g.id, delta: 1}, g.progress + 1 >= g.target ? (auth.parent ? "Goal complete! +" + g.xp + " XP" : "You did it! Sent for a parent's OK") : "Nice, " + (g.progress + 1) + " of " + g.target); };
+      gp.append(p);
+    }
+    row.append(gp);
+  }
+  const gb = el("div", "gb");
+  if (review && g.status === "claimed") {
+    const no = el("button", "btn ghost", "Not yet"), yes = el("button", "btn", "OK, award it");
+    no.onclick = () => rpg({op: "goal_notyet", id: g.id}, "Sent back a step");
+    yes.onclick = () => rpg({op: "goal_ok", id: g.id}, "Goal complete! +" + g.xp + " XP for " + g.person);
+    gb.append(no, yes);
+  } else if (review && g.status === "proposed") {
+    const look = el("a", "btn", "Set the reward"); look.href = "#goal/" + g.id; look.style.textDecoration = "none"; gb.append(look);
+  } else if (auth.parent && !review) {
+    const ed = el("a", "btn ghost", "Edit"); ed.href = "#goal/" + g.id; ed.style.textDecoration = "none"; gb.append(ed);
+  } else if (g.status === "proposed" && canAct(g.person)) {
+    const w = el("button", "btn ghost", "Take it back"); twice(w, "Tap again to take it back", () => rpg({op: "goal_decline", id: g.id}, "Taken back")); gb.append(w);
+  }
+  if (gb.children.length) row.append(gb);
+  return row;
+}
+function goalList(box, goals, empty, review) {
+  box.replaceChildren();
+  if (!goals.length) { if (empty) box.append(el("div", "empty", empty)); return; }
+  goals.forEach(g => box.append(goalRow(g, review)));
+}
+function renderGoal() {
+  const g = route.id ? R.goals.find(x => x.id === route.id) : null;
+  if (!R.goals_on || (route.id && !g)) { location.hash = "#quests"; return; }
+  if (gFilled) return;
+  gFilled = true;
+  const person = g ? g.person : (route.person || me || "");
+  const sel = $("gStat"); if (!sel.options.length) Object.keys(R.stats).forEach(k => { const o = el("option", null, k + ": " + R.stats[k]); o.value = k; sel.append(o); });
+  $("gWhoRow").hidden = !auth.parent;
+  chips($("gWho"), people().map(p => [p.name, p.name]), [people().some(p => p.name === person) ? person : (me || "")], false);
+  $("gTitle").value = g ? g.title : ""; $("gWhy").value = g ? g.why : "";
+  $("gTarget").value = g ? g.target : ""; $("gUnit").value = g ? g.unit : "";
+  $("gStat").value = g ? g.stat : "INT"; $("gDue").value = g ? g.due : "";
+  const size = g && g.xp ? g.size : "big";
+  $("gSize").value = size; $("gXp").value = g && g.xp ? g.xp : R.goal_sizes[size][0]; $("gGold").value = g && g.xp ? g.gold : R.goal_sizes[size][1];
+  $("gRewardBox").hidden = !auth.parent; $("gKidNote").hidden = auth.parent;
+  const proposal = g && g.status === "proposed";
+  $("title").textContent = !g ? (auth.parent ? "New goal" : "Propose a goal") : proposal ? g.person + "'s idea" : "Edit goal";
+  $("gIntro").textContent = proposal ? g.person + " proposed this. Adjust anything, set the reward, and approve it." : !g && !auth.parent ? "A goal is a big quest that takes a while: reading a stack of books, learning a skill, saving up for something. Mom or Dad will set the reward." : "";
+  $("gIntro").hidden = !$("gIntro").textContent;
+  $("gSave").textContent = proposal ? "Approve" : g ? "Save" : auth.parent ? "Add goal" : "Send it";
+  $("gNo").hidden = !(proposal && auth.parent);
+  $("gDel").hidden = !(g && auth.parent);
+  const hist = g ? g.recent || [] : [];
+  $("gHistBox").hidden = !hist.length;
+  const hb = $("gHist"); hb.replaceChildren();
+  hist.forEach(h => { const r = el("div", "logrow"), t = el("span", null, (h.delta > 0 ? "+" : "") + h.delta + (g.unit ? " " + g.unit : "") + (h.note ? " · " + h.note : "")); t.append(el("small", null, h.person + " · " + ago(h.at))); r.append(t); hb.append(r); });
+  if (!g) $("gTitle").focus();
+}
+$("gSize").onchange = e => { $("gXp").value = R.goal_sizes[e.target.value][0]; $("gGold").value = R.goal_sizes[e.target.value][1]; };
+$("gSave").onclick = async () => {
+  const g = route.id ? R.goals.find(x => x.id === route.id) : null;
+  const body = {title: $("gTitle").value, why: $("gWhy").value, target: $("gTarget").value || 1, unit: $("gUnit").value, stat: $("gStat").value, due: $("gDue").value,
+    size: $("gSize").value, xp: $("gXp").value, gold: $("gGold").value};
+  if (g) Object.assign(body, {op: "goal_save", id: g.id});
+  else Object.assign(body, {op: "goal_propose", person: auth.parent ? (chipVals($("gWho"))[0] || me) : me});
+  if (!body.person && !g && !me) { pickMe(); return; }
+  if (await rpg(body, g && g.status === "proposed" ? "Approved" : g ? "Saved" : auth.parent ? "Goal added" : "Sent to Mom and Dad")) history.back();
+};
+twice($("gNo"), "Tap again to set it aside", async () => { if (await rpg({op: "goal_decline", id: route.id}, "Set aside")) history.back(); });
+twice($("gDel"), "Tap again to delete", async () => { if (await rpg({op: "goal_delete", id: route.id}, "Deleted")) history.back(); });
+
+/* ---------- the Remote: put a detail page on the kitchen screen */
+let scr = {page: ""}, scrSkew = 0;
+try { $("scrSecs").value = store.get("scrSecs") || "120"; } catch (e) {}
+$("scrSecs").onchange = e => store.set("scrSecs", e.target.value);
+async function cast(page, arg) {
+  try { scr = await api("/api/screen", {page, arg: arg || "", secs: +$("scrSecs").value || 120, by: me}); scrSkew = Date.now() / 1000 - scr.now; paintScr(); say(page ? "On the kitchen screen" : "Back to the dashboard", "ok"); }
+  catch (e) { say(e.message, "err"); }
+}
+function pollScr() { api("/api/screen").then(d => { scr = d; scrSkew = Date.now() / 1000 - d.now; paintScr(); }).catch(() => {}); }
+const PAGE_NAMES = {weather: () => "the weather", month: a => monthName(a), day: a => dayName(a), sheet: a => a + "'s character sheet"};
+const monthName = a => { const [y, m] = (a || ymdL(new Date()).slice(0, 7)).split("-").map(Number); return new Date(y, m - 1, 1).toLocaleDateString(undefined, {month: "long", year: "numeric"}); };
+const dayName = a => { const [y, m, d] = (a || ymdL(new Date())).split("-").map(Number); return new Date(y, m - 1, d).toLocaleDateString(undefined, {weekday: "long", month: "short", day: "numeric"}); };
+const ymdL = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+function paintScr() {
+  const left = scr.page ? Math.max(0, Math.round(scr.until - (Date.now() / 1000 - scrSkew))) : 0;
+  const on = scr.page && left > 0;
+  $("scrNow").textContent = on ? "Showing " + PAGE_NAMES[scr.page](scr.arg) + " · " + Math.floor(left / 60) + ":" + String(left % 60).padStart(2, "0") + " left" : "Showing the dashboard";
+  $("scrBack").hidden = !on;
+}
+setInterval(() => { if (route.view === "remote" && !document.hidden) paintScr(); }, 1000);
+$("scrBack").onclick = () => cast("");
+$("rcWeather").onclick = () => cast("weather");
+$("shCast").onclick = () => cast("sheet", route.id);
+function renderRemote() {
+  const cal = $("rcCal"); cal.replaceChildren();
+  const t = new Date(), tm = new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1), nm = new Date(t.getFullYear(), t.getMonth() + 1, 1);
+  [["Today", "day", ymdL(t)], ["Tomorrow", "day", ymdL(tm)], ["This month", "month", ymdL(t).slice(0, 7)], [nm.toLocaleDateString(undefined, {month: "long"}), "month", ymdL(nm).slice(0, 7)]]
+    .forEach(([label, page, arg]) => { const b = el("button", null, label); b.type = "button"; b.onclick = () => cast(page, arg); cal.append(b); });
+  const p = $("rcParty"); p.replaceChildren();
+  people().forEach(m => {
+    const row = el("div", "hero"); row.style.padding = "8px 0";
+    const w = el("div", "who"); w.append(el("div", "nm", m.name));
+    row.append(avatar(m, true), w, el("span", "chev", "›"));
+    row.onclick = () => cast("sheet", m.name); p.append(row);
+  });
+  if (!people().length) p.append(el("div", "empty", "Add the family under Settings first."));
+  api("/api/weather").then(d => { if (d.temp != null) $("rcWx").textContent = Math.round(d.temp) + "° " + d.text + " now · tap for hourly and 7-day"; }).catch(() => {});
+}
+
+/* ---------- lists */
+async function loadLists() {
+  try { L = await api("/api/app/lists"); renderLists(); } catch (e) { if (!L) say(e.message, "err"); }
+}
+function renderLists() { if (route.view === "lists") renderOverview(); else if (route.view === "list") renderList(); }
+async function change(body, optimistic) {
+  if (optimistic) { optimistic(); renderLists(); }
+  busy++;
+  try { L = await api("/api/app/lists", body); return true; }
+  catch (e) { say(e.message, "err"); await loadLists(); return false; }
+  finally { busy--; renderLists(); }
+}
+function card(name, tag, count, href) {
+  const c = el("section", "card"); c.append(el("span", "name", name));
+  if (tag) c.append(el("span", "tag", tag));
+  c.append(el("span", "count", count), el("span", "chev", "›"));
+  c.onclick = () => { location.hash = href; };
+  return c;
+}
+function renderOverview() {
+  const box = $("appLists"), rb = $("remLists"); box.replaceChildren(); rb.replaceChildren();
+  if (!L) return;
+  L.lists.forEach(l => { const n = l.items.filter(i => !i.done).length; box.append(card(l.name, l.show ? "" : "Not on screen", n ? n + " left" : "All done", "#list/" + l.id)); });
+  if (!L.lists.length) { const p = el("section"); p.append(el("div", "empty", "No lists yet. Start one below.")); box.append(p); }
+  if (L.reminders.length) {
+    rb.append(el("div", "group", "From iPhone Reminders"));
+    L.reminders.forEach(l => rb.append(card(l.name, "Read only", l.items.length + " item" + (l.items.length === 1 ? "" : "s"), "#list/r" + encodeURIComponent(l.name))));
+  }
+}
+const curList = () => !L ? null : route.rem ? L.reminders.find(l => l.name === route.id) : L.lists.find(l => l.id === route.id);
+function renderList() {
+  const l = curList();
+  if (!l) { if (L) location.hash = "#lists"; return; }
+  $("title").textContent = l.name;
+  $("addRow").hidden = $("listOpts").hidden = route.rem; $("remInfo").hidden = !route.rem;
+  const box = $("itemsBox");
+  if (editing) return;   // don't redraw under someone's thumb
+  box.replaceChildren();
+  if (route.rem) {
+    $("remRemoveRow").hidden = !auth.parent;
+    if (!l.items.length) { box.append(el("div", "empty", "All done")); return; }
+    const ul = el("ul", "items"); l.items.forEach(t => { const li = el("li", "item"); li.append(el("div", "t", t)); ul.append(li); }); box.append(ul);
+    const u = el("p", "note"); u.textContent = "Updated " + ago(l.updated) + " from the iPhone."; box.append(u);
+    return;
+  }
+  const open = l.items.filter(i => !i.done), done = l.items.filter(i => i.done);
+  if (open.length) { const ul = el("ul", "items"); open.forEach(i => ul.append(itemRow(i))); box.append(ul); }
+  else box.append(el("div", "empty", done.length ? "All done" : "Nothing here yet. Add the first item above."));
+  if (done.length) {
+    const head = el("div", "donehead"), tog = el("button", null, (showDone ? "▾ " : "▸ ") + "Done (" + done.length + ")"), clr = el("button", null, "Clear done");
+    tog.onclick = () => { showDone = !showDone; renderList(); };
+    twice(clr, "Tap again to clear", () => change({op: "clear_done", list: l.id}));
+    head.append(tog, clr); box.append(head);
+    if (showDone) { const ul = el("ul", "items"); done.forEach(i => ul.append(itemRow(i))); box.append(ul); }
+  }
+  if (document.activeElement !== $("renameText")) $("renameText").value = l.name;
+  $("showSw").checked = l.show;
+  $("delNote").hidden = auth.parent;
+}
+function itemRow(i) {
+  const li = el("li", "item" + (i.done ? " done" : ""));
+  const b = el("button", "chk"); b.innerHTML = CHECK; b.setAttribute("aria-label", i.done ? "Not done" : "Done");
+  b.onclick = () => change({op: "item_done", id: i.id, done: !i.done, by: me}, () => { i.done = !i.done; i.done_by = me; i.done_at = Date.now() / 1000; });
+  const t = el("div", "t"); t.append(el("span", "tx", i.text));
+  const meta = i.done ? "✓ " + (i.done_by ? i.done_by + " · " : "") + ago(i.done_at) : i.by ? "added by " + i.by : "";
+  if (meta) t.append(el("small", null, meta));
+  if (!i.done) t.onclick = () => editItem(li, b, i);
+  li.append(b, t);
+  return li;
+}
+function editItem(li, chk, i) {
+  editing = i.id;
+  const inp = el("input"); inp.type = "text"; inp.value = i.text; inp.maxLength = 120; inp.enterKeyHint = "done";
+  const x = el("button", "x", "Delete");
+  li.replaceChildren(chk, inp, x); inp.focus();
+  let finished = false;
+  const done = () => { finished = true; editing = null; };
+  inp.onkeydown = e => { if (e.key === "Enter") inp.blur(); if (e.key === "Escape") { done(); renderList(); } };
+  inp.onblur = () => setTimeout(() => {
+    if (finished) return; done();
+    const v = inp.value.trim();
+    if (!v) change({op: "item_delete", id: i.id});
+    else if (v !== i.text) change({op: "item_edit", id: i.id, text: v}, () => { i.text = v; });
+    else renderList();
+  }, 150);
+  x.onmousedown = e => e.preventDefault();   // keep the keyboard up so the tap lands on Delete
+  x.onclick = () => { done(); change({op: "item_delete", id: i.id}); };
+}
+async function addItem() {
+  const v = $("addText").value.trim(), l = curList(); if (!v || !l) return;
+  $("addText").value = ""; $("addText").focus();
+  await change({op: "item_add", list: l.id, text: v, by: me});
+}
+$("addText").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); addItem(); } };
+$("addBtn").onclick = addItem;
+$("renameBtn").onclick = () => { const v = $("renameText").value.trim(); if (v) change({op: "list_rename", id: route.id, name: v}).then(ok => ok && say("Renamed", "ok")); };
+$("showSw").onchange = e => change({op: "list_show", id: route.id, show: e.target.checked});
+$("upBtn").onclick = () => change({op: "list_move", id: route.id, dir: -1}).then(ok => ok && say("Moved up", "ok"));
+$("downBtn").onclick = () => change({op: "list_move", id: route.id, dir: 1}).then(ok => ok && say("Moved down", "ok"));
+twice($("delList"), "Tap again to delete", async () => { if (await change({op: "list_delete", id: route.id})) { say("Deleted", "ok"); location.hash = "#lists"; } });
+twice($("remRemove"), "Tap again to remove", async () => { if (await change({op: "reminders_remove", name: route.id})) { say("Removed", "ok"); location.hash = "#lists"; } });
+async function newList() {
+  const v = $("newName").value.trim(); if (!v) return;
+  if (await change({op: "list_add", name: v})) {
+    $("newName").value = "";
+    const l = L.lists.find(x => x.name.toLowerCase() === v.toLowerCase());
+    if (l) location.hash = "#list/" + l.id;
+  }
+}
+$("newBtn").onclick = newList;
+$("newName").onkeydown = e => { if (e.key === "Enter") newList(); };
+
+/* ---------- messages */
+function paintNotes(notes) {
+  const box = $("notes"); box.replaceChildren();
+  $("nclearRow").hidden = !(notes.length && auth.parent);
+  if (!notes.length) { box.append(el("p", "note", "No messages on the screen.")); box.firstChild.style.marginTop = 0; return; }
+  notes.forEach(n => {
+    const row = el("div", "lrow"), t = el("span", null, n.text); t.style.whiteSpace = "pre-line";
+    const c = colorOf(n.from); if (c) { t.style.borderLeft = "3px solid " + c; t.style.paddingLeft = "10px"; }
+    t.append(el("small", null, (n.from ? n.from + " · " : "") + new Date(n.at * 1000).toLocaleString(undefined, {weekday: "short", hour: "numeric", minute: "2-digit"})));
+    const b = el("button", "btn ghost", "Remove"); b.onclick = () => postNote({delete: n.id}, "Removed");
+    row.append(t, b); box.append(row);
+  });
+}
+async function postNote(body, done) {
+  say("Saving…");
+  try { const d = await api("/api/notes", body); paintNotes(d.notes); say(done, "ok"); return true; }
+  catch (e) { say(e.message, "err"); return false; }
+}
+function loadNotes() { api("/api/notes").then(d => paintNotes(d.notes)).catch(() => {}); }
+$("nsend").onclick = async () => {
+  const text = $("ntext").value.trim();
+  if (!text) { say("Write a message first", "err"); return; }
+  if (await postNote({text, from: me}, "Posted")) $("ntext").value = "";
+};
+twice($("nclear"), "Tap again to clear all", () => postNote({clear: true}, "Cleared"));
+
+/* ---------- parent PIN */
+function paintAuth() {
+  const locked = auth.pin_set && !auth.parent;
+  $("lockBox").hidden = !locked; $("setBox").hidden = locked;
+  $("pinState").textContent = auth.pin_set ? "A PIN is set. Settings, deleting lists and clearing all messages need it. This phone is unlocked."
+    : "No PIN yet, so anyone on your Wi-Fi can change settings and delete lists. Set one to keep that to parents.";
+  $("newPin").placeholder = auth.pin_set ? "New PIN to replace it" : "New PIN (4 to 8 digits)";
+  $("pinBtns").hidden = !auth.pin_set;
+  if (locked && route.view === "settings") setTimeout(() => $("pinIn").focus(), 50);
+}
+function gotAuth(d) {
+  if (d.token !== undefined) { token = d.token || ""; store.set("parentToken", token); }
+  auth = {pin_set: d.pin_set, parent: d.parent}; paintAuth();
+}
+async function unlock() {
+  const pin = $("pinIn").value.trim(); if (!pin) return;
+  try { gotAuth(await api("/api/auth", {pin})); $("pinIn").value = ""; say("Unlocked", "ok"); loadSettings(true); }
+  catch (e) { say(e.message, "err"); $("pinIn").select(); }
+}
+$("pinGo").onclick = unlock;
+$("pinIn").onkeydown = e => { if (e.key === "Enter") unlock(); };
+$("setPin").onclick = async () => {
+  const p = $("newPin").value.trim();
+  if (!/^\d{4,8}$/.test(p)) { say("Use 4 to 8 digits", "err"); return; }
+  try { gotAuth(await api("/api/auth", {new_pin: p})); $("newPin").value = ""; say("PIN saved", "ok"); } catch (e) { say(e.message, "err"); }
+};
+$("lockNow").onclick = async () => {
+  try { await api("/api/auth", {lock: true}); } catch (e) {}
+  token = ""; store.set("parentToken", ""); auth.parent = false; paintAuth(); say("Locked", "ok");
+};
+twice($("clearPin"), "Tap again to remove the PIN", async () => {
+  try { gotAuth(await api("/api/auth", {new_pin: ""})); token = ""; store.set("parentToken", ""); say("PIN removed", "ok"); } catch (e) { say(e.message, "err"); }
+});
+
+/* ---------- family (people) */
+function paintPeople() {
+  const box = $("people"); box.replaceChildren();
+  people().forEach(p => {
+    const row = el("div", "row");
+    const c = el("input"); c.type = "color"; c.value = p.color;
+    const w = el("input"); w.type = "text"; w.value = p.name; w.maxLength = 24; w.placeholder = "Name";
+    const x = el("button", "btn ghost", "Remove");
+    c.onchange = w.onchange = savePeople;
+    x.onclick = () => { row.remove(); savePeople(); };
+    row.append(c, w, x); box.append(row);
+  });
+}
+const readPeople = () => [...$("people").children].map(row => { const [c, w] = row.querySelectorAll("input"); return {name: w.value.trim(), color: c.value}; });
+function savePeople() { save({people: readPeople().filter(p => p.name)}).then(() => { paintPeople(); paintMe(); }); }
+$("addPerson").onclick = () => {
+  s.people = [...readPeople(), {name: "", color: PALETTE[people().length % PALETTE.length]}];
+  paintPeople(); const ins = $("people").querySelectorAll("input[type=text]"); ins[ins.length - 1].focus();
+};
+
+/* ---------- settings (moved here from the old /settings page) */
+function applyBg() {   // the kitchen screen's wallpaper behind the app too
+  const a = s.daily || {}, daily = a.source === s.bg_mode;
+  const url = s.bg_mode === "image" ? s.bg_url : daily && a.ready && a.date ? "/daily/" + a.source + "?d=" + a.date : "";
+  $("bg").style.backgroundImage = url ? 'url("' + url.replace(/"/g, "%22") + '")' : "";
+  document.documentElement.style.setProperty("--dim", (s.bg_mode !== "default" ? Math.max(s.bg_dim, 30) : 0) / 100);
+}
+async function loadSettings(full) {
+  try {
+    s = await api("/api/settings");
+    auth = {pin_set: s.pin_set, parent: s.parent};
+    applyBg(); paintMe();
+    if (people().length && !me) pickMe();
+    if (route.view === "settings") { paintAuth(); if (full && auth.parent) { paint(); paintRules(); paintPeople(); loadAlbums(); } }
+  } catch (e) { say(e.message, "err"); }
+}
+function paint() {
+  document.querySelectorAll('input[name=mode]').forEach(r => r.checked = r.value === s.bg_mode);
+  $("albumMode").classList.toggle("off", !s.album_ready);
+  $("albumMode").querySelector("input").disabled = !s.album_ready;
+  $("albumNote").textContent = s.album_ready ? "A random photo from your Immich album." : "Add an Immich key and pick an album under Photos from Immich first.";
+  $("imageOpts").hidden = s.bg_mode !== "image";
+  $("albumOpts").hidden = s.bg_mode !== "album";
+  const a = s.daily || {}, daily = a.source === s.bg_mode;
+  $("apodOpts").hidden = !daily;
+  $("unsplashOpts").hidden = s.bg_mode !== "unsplash";
+  $("uskey").placeholder = s.unsplash_key_set ? "Key saved. Paste a new one to replace it." : "Unsplash Access Key";
+  const extra = s.bg_mode === "apod" ? " Video days keep the last picture." : "";
+  if (s.bg_mode === "folder") {
+    const gs = Object.entries(a.groups || {}).map(([k, n]) => k + " " + n).join(", ");
+    $("apodOpts").textContent = (a.ready ? "Today: " + (a.title || "(untitled)") + (a.season ? " (" + a.season + ")" : "") + ". Changes at midnight. " : a.error ? "Nothing to show: " + a.error + ". The screen shows the dark gradient until there is. " : "")
+      + (a.total ? a.total + " pictures (" + gs + ")" : "") + (a.skipped ? ". " + a.skipped + " HEIC or other files skipped; save those as JPEG." : "")
+      + " Folder on the server: " + (a.folder || "data/wallpapers") + ". Subfolders named christmas, halloween, thanksgiving, easter, valentines, july4, new-year, st-patricks or a month only show in their season.";
+  } else
+
+  $("apodOpts").textContent = a.error && !a.ready ? a.label + " isn't available right now (" + a.error + "). The screen shows the dark gradient until it is; it retries hourly."
+    : a.ready && a.date ? "Today: " + (a.title || "(untitled)") + (a.copyright ? " (© " + a.copyright + ")" : "") + ". Changes once a day." + extra
+    : "Fetching today's picture…";
+  // still fetching: check again shortly so the status and preview update by themselves
+  clearTimeout(window._dailyT);
+  if (daily && s.bg_mode !== "folder" && !(a.ready && a.date) && !a.error) window._dailyT = setTimeout(() => api("/api/settings").then(d => { s = d; paint(); applyBg(); }), 4000);
+  $("panelRow").hidden = $("pfillRow").hidden = $("pvidRow").hidden = !s.album_ready;
+  $("imkey").placeholder = s.immich_key_set ? "Key saved. Paste a new one to replace it." : "Immich API key";
+  $("dim").value = s.bg_dim; $("dimv").textContent = s.bg_dim + "%";
+  $("every").value = String(s.bg_every);
+  $("blur").checked = s.blur !== false; $("tscale").value = s.text_scale || 100; $("tscalev").textContent = (s.text_scale || 100) + "%"; $("panel").checked = s.photo_panel !== false; $("pfill").checked = !!s.photo_fill; $("faceMsg").hidden = !(s.album_ready && s.faces === "no_permission"); $("pvid").checked = !!s.photo_videos;
+  $("url").value = /^https?:/.test(s.bg_url || "") ? s.bg_url : "";
+  $("ics").placeholder = s.ics_from_settings ? "Calendar saved. Paste a new address to replace it." : s.ics_set ? "Calendar set on the server. Paste here to replace it." : "Google calendar: Secret address in iCal format";
+  if (document.activeElement !== $("place")) $("place").value = s.wx_place || s.wx_place_env || "";
+  $("units").value = s.wx_units || "us";
+  $("ndays").value = String(s.notes_days ?? 3);
+  if (document.activeElement !== $("smspeople")) $("smspeople").value = s.sms_people || "";
+  if (document.activeElement !== $("mailuser")) $("mailuser").value = s.mail_user || "";
+  if (document.activeElement !== $("mailhost")) $("mailhost").value = s.mail_host || "";
+  $("mailpass").placeholder = s.mail_pass_set ? "Password saved. Paste a new one to replace it." : "Mailbox password (Bridge or app password)";
+  const ms = s.mail_status || {};
+  $("mailstat").hidden = !s.mail_user;
+  $("mailstat").textContent = ms.error ? "Mailbox problem: " + ms.error : ms.ok ? "Checking the inbox every minute. Last check " + new Date(ms.ok * 1000).toLocaleTimeString([], {hour: "numeric", minute: "2-digit"}) + "." : "Saved. The first check runs within a minute.";
+  $("twtoken").placeholder = s.twilio_token_set ? "Auth Token saved. Paste a new one to replace it." : "Twilio Auth Token";
+  $("wxdays").value = String(s.wx_days || 3); $("wxmono").checked = !!s.wx_mono; $("wxbare").checked = !!s.wx_bare; $("msound").checked = s.msg_sound !== false;
+  if (document.activeElement !== $("gname")) $("gname").value = s.greet_name || "";
+  if (document.activeElement !== $("quotes")) $("quotes").value = s.quotes || "";
+  $("qonly").checked = !!s.quotes_only;
+  $("token").value = s.list_token ? "Bearer " + s.list_token : "LIST_TOKEN isn't set on the server";
+}
+async function save(body) {
+  say("Saving…");
+  try { s = await api("/api/settings", body); paint(); applyBg(); say("Saved", "ok"); }
+  catch (e) { say(e.message, "err"); }
+}
+$("saveSms").onclick = () => {
+  const body = {sms_people: $("smspeople").value, mail_user: $("mailuser").value.trim(), mail_host: $("mailhost").value.trim()}, t = $("twtoken").value.trim(), mp = $("mailpass").value.trim();
+  if (t) body.twilio_token = t;
+  if (mp) body.mail_pass = mp;
+  if (body.mail_user && (mp || !s.mail_pass_set)) say("Signing in to the mailbox…");
+  save(body).then(() => { if (s.twilio_token_set) $("twtoken").value = ""; if (s.mail_pass_set) $("mailpass").value = ""; });
+};
+function loadAlbums() {
+  api("/api/immich/albums").then(d => {
+    const sel = $("album");
+    $("albumRow").hidden = !d.albums.length;
+    if (!d.albums.length) { $("albumMsg").textContent = s.immich_key_set ? (d.error ? "Immich: " + d.error : "No albums yet. Make one in Immich for the kitchen.") : ""; return; }
+    sel.replaceChildren();
+    const none = el("option", null, "Pick the album for the kitchen screen…"); none.value = ""; sel.append(none);
+    const fav = el("option", null, "♥ Favorites (everything you've hearted)"); fav.value = "favorites"; sel.append(fav);
+    d.albums.forEach(a => { const o = el("option", null, a.name + " (" + a.count + ")"); o.value = a.id; sel.append(o); });
+    sel.value = s.immich_album || "";
+    $("albumMsg").textContent = s.immich_album === "favorites" ? "Anything you heart in Immich shows up within an hour."
+      : s.immich_album ? "New photos added to the album show up within an hour." : "";
+  }).catch(() => {});
+}
+$("saveImkey").onclick = async () => {
+  const k = $("imkey").value.trim(); if (!k) return;
+  await save({immich_key: k});
+  if ($("msg").className === "ok") { $("imkey").value = ""; loadAlbums(); }
+};
+$("album").onchange = e => save({immich_album: e.target.value}).then(loadAlbums);
+document.querySelectorAll('input[name=mode]').forEach(r => r.addEventListener("change", () => {
+  if (r.value === "image" && !s.bg_url) { s.bg_mode = "image"; paint(); say("Upload a picture or paste an address."); return; }
+  save({bg_mode: r.value});
+}));
+$("useUrl").onclick = () => { const u = $("url").value.trim(); if (u) save({bg_url: u}); };
+$("dim").oninput = e => { $("dimv").textContent = e.target.value + "%"; document.documentElement.style.setProperty("--dim", Math.max(e.target.value, 30) / 100); };
+$("dim").onchange = e => save({bg_dim: +e.target.value});
+$("every").onchange = e => save({bg_every: +e.target.value});
+$("blur").onchange = e => save({blur: e.target.checked});
+$("panel").onchange = e => save({photo_panel: e.target.checked});
+$("pfill").onchange = e => save({photo_fill: e.target.checked});
+$("pvid").onchange = e => save({photo_videos: e.target.checked});
+$("saveIcs").onclick = async () => { const u = $("ics").value.trim(); if (!u) return; say("Checking the calendar…"); await save({ics_url: u}); if ($("msg").className === "ok") $("ics").value = ""; };
+$("savePlace").onclick = () => { const p = $("place").value.trim(); if (p) { say("Looking up the city…"); save({wx_place: p, wx_units: $("units").value}); } };
+$("units").onchange = () => save({wx_units: $("units").value});
+$("saveUskey").onclick = () => { const k = $("uskey").value.trim(); if (k) { say("Checking the key with Unsplash…"); save({unsplash_key: k}).then(() => { if (s.unsplash_key_set) $("uskey").value = ""; }); } };
+$("tscale").oninput = e => $("tscalev").textContent = e.target.value + "%";
+$("tscale").onchange = e => save({text_scale: +e.target.value});
+// calendar color rules: edit in place, saved when a field is changed or a row removed
+function paintRules() {
+  const box = $("rules"); box.replaceChildren();
+  (s.color_rules || []).forEach(r => {
+    const row = el("div", "row");
+    const c = el("input"); c.type = "color"; c.value = r.color;
+    const w = el("input"); w.type = "text"; w.value = r.words; w.placeholder = "Name, e.g. Sam";
+    const x = el("button", "btn ghost", "Remove");
+    c.onchange = w.onchange = () => saveRules();
+    x.onclick = () => { row.remove(); saveRules(); };
+    row.append(c, w, x); box.append(row);
+  });
+}
+const readRules = () => [...$("rules").children].map(row => { const [c, w] = row.querySelectorAll("input"); return {words: w.value, color: c.value}; });
+function saveRules() { save({color_rules: readRules().filter(r => r.words.trim())}).then(paintRules); }
+$("addRule").onclick = () => {
+  s.color_rules = [...readRules(), {words: "", color: "#f0a53a"}];
+  paintRules(); const ins = $("rules").querySelectorAll("input[type=text]"); ins[ins.length - 1].focus();
+};
+$("wxdays").onchange = e => save({wx_days: +e.target.value});
+$("wxmono").onchange = e => save({wx_mono: e.target.checked});
+$("wxbare").onchange = e => save({wx_bare: e.target.checked});
+$("msound").onchange = e => save({msg_sound: e.target.checked});
+$("ndays").onchange = e => save({notes_days: e.target.value});
+$("copyToken").onclick = async () => {
+  try { await navigator.clipboard.writeText($("token").value); say("Copied", "ok"); }
+  catch (e) { $("token").select(); document.execCommand("copy"); say("Copied", "ok"); }
+};
+$("saveName").onclick = () => save({greet_name: $("gname").value});
+$("gname").onkeydown = e => { if (e.key === "Enter") $("saveName").onclick(); };
+$("saveQuotes").onclick = () => save({quotes: $("quotes").value});
+$("qonly").onchange = e => save({quotes_only: e.target.checked});
+// shrink to cover 1920x1080 before upload: small file, cheap for the kiosk to draw
+$("file").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  say("Preparing picture…");
+  try {
+    const img = await createImageBitmap(f, {imageOrientation: "from-image"});
+    const scale = Math.min(1, Math.max(1920 / img.width, 1080 / img.height));
+    const c = document.createElement("canvas");
+    c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    const blob = await new Promise(res => c.toBlob(res, "image/jpeg", 0.86));
+    say("Uploading…");
+    const h = {"Content-Type": "image/jpeg"}; if (token) h["X-Parent"] = token;
+    const r = await fetch("/api/background", {method: "POST", headers: h, body: blob});
+    const d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error || "Upload failed");
+    s = d; paint(); applyBg(); say("Saved", "ok");
+  } catch (err) { say(err.message || "Couldn't read that picture", "err"); }
+  e.target.value = "";
+};
+
+/* ---------- start, and keep up with the other phones */
+route = parseHash();
+loadSettings(false).then(showView);
+setInterval(() => {
+  if (document.hidden || busy || editing) return;
+  if (route.view === "lists" || route.view === "list") loadLists();
+  else if (route.view === "messages") loadNotes();
+  else if (["quests", "sheet", "manage", "goal", "habit"].includes(route.view) && !document.activeElement.matches("input,textarea,select")) loadRpg();
+  else if (route.view === "remote") pollScr();
+}, 10000);
+document.addEventListener("visibilitychange", () => {   // back from another app: catch up without losing your place
+  if (document.hidden || editing) return;
+  loadSettings(false);
+  if (route.view === "lists" || route.view === "list") loadLists(); else if (route.view === "messages") loadNotes();
+  else if (["quests", "sheet", "manage", "goal", "habit"].includes(route.view)) loadRpg();
+});
+</script>
+</body>
